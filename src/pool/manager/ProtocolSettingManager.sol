@@ -1,0 +1,357 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.30;
+
+import {AccessManaged} from "openzeppelin-contracts/access/manager/AccessManaged.sol";
+import {IPool} from "../../interfaces/pool/IPool.sol";
+import {IProtocolSettingManager} from "../../interfaces/pool/IProtocolSettingManager.sol";
+
+contract ProtocolSettingManager is AccessManaged, IProtocolSettingManager {
+    struct ProtocolSettingManagerStorage {
+        IPool _pool;
+    }
+
+    // keccak256(abi.encode(uint256(keccak256("Zeur.storage.ProtocolSettingManager")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant ProtocolSettingManagerStorageLocation =
+        0x1c03345a3baecbfa5f76c98daacb964c084ba41883ee9de5881a16f46ba4f100;
+
+    function _getProtocolSettingManagerStorage()
+        private
+        pure
+        returns (ProtocolSettingManagerStorage storage $)
+    {
+        assembly {
+            $.slot := ProtocolSettingManagerStorageLocation
+        }
+    }
+
+    constructor(
+        address initialAuthority,
+        IPool pool
+    ) AccessManaged(initialAuthority) {
+        _getProtocolSettingManagerStorage()._pool = pool;
+    }
+
+    function initCollateralAsset(
+        address collateralAsset,
+        IPool.CollateralConfiguration memory collateralConfiguration
+    ) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        $._pool.initCollateralAsset(collateralAsset, collateralConfiguration);
+    }
+
+    function initDebtAsset(
+        address debtAsset,
+        IPool.DebtConfiguration memory debtConfiguration
+    ) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        $._pool.initDebtAsset(debtAsset, debtConfiguration);
+    }
+
+    function setCollateralConfiguration(
+        address collateralAsset,
+        IPool.CollateralConfiguration memory collateralConfiguration
+    ) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        $._pool.setCollateralConfiguration(
+            collateralAsset,
+            collateralConfiguration
+        );
+    }
+
+    function setCollateralLtv(
+        address collateralAsset,
+        uint16 ltv
+    ) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        IPool.CollateralConfiguration memory collateralConfiguration = $
+            ._pool
+            .getCollateralAssetConfiguration(collateralAsset);
+
+        collateralConfiguration.ltv = ltv;
+
+        $._pool.setCollateralConfiguration(
+            collateralAsset,
+            collateralConfiguration
+        );
+    }
+
+    function setCollateralLiquidationThreshold(
+        address collateralAsset,
+        uint16 liquidationThreshold
+    ) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        IPool.CollateralConfiguration memory collateralConfiguration = $
+            ._pool
+            .getCollateralAssetConfiguration(collateralAsset);
+
+        collateralConfiguration.liquidationThreshold = liquidationThreshold;
+
+        $._pool.setCollateralConfiguration(
+            collateralAsset,
+            collateralConfiguration
+        );
+    }
+
+    function setCollateralLiquidationBonus(
+        address collateralAsset,
+        uint16 liquidationBonus
+    ) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        IPool.CollateralConfiguration memory collateralConfiguration = $
+            ._pool
+            .getCollateralAssetConfiguration(collateralAsset);
+
+        collateralConfiguration.liquidationBonus = liquidationBonus;
+
+        $._pool.setCollateralConfiguration(
+            collateralAsset,
+            collateralConfiguration
+        );
+    }
+
+    function setCollateralLiquidationProtocolFee(
+        address collateralAsset,
+        uint16 liquidationProtocolFee
+    ) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        IPool.CollateralConfiguration memory collateralConfiguration = $
+            ._pool
+            .getCollateralAssetConfiguration(collateralAsset);
+
+        collateralConfiguration.liquidationProtocolFee = liquidationProtocolFee;
+
+        $._pool.setCollateralConfiguration(
+            collateralAsset,
+            collateralConfiguration
+        );
+    }
+
+    function setCollateralReserveFactor(
+        address collateralAsset,
+        uint16 reserveFactor
+    ) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        IPool.CollateralConfiguration memory collateralConfiguration = $
+            ._pool
+            .getCollateralAssetConfiguration(collateralAsset);
+
+        collateralConfiguration.reserveFactor = reserveFactor;
+
+        $._pool.setCollateralConfiguration(
+            collateralAsset,
+            collateralConfiguration
+        );
+    }
+
+    function setCollateralSupplyCap(
+        address collateralAsset,
+        uint96 supplyCap
+    ) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        IPool.CollateralConfiguration memory collateralConfiguration = $
+            ._pool
+            .getCollateralAssetConfiguration(collateralAsset);
+
+        collateralConfiguration.supplyCap = supplyCap;
+
+        $._pool.setCollateralConfiguration(
+            collateralAsset,
+            collateralConfiguration
+        );
+    }
+
+    function setCollateralBorrowCap(
+        address collateralAsset,
+        uint96 borrowCap
+    ) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        IPool.CollateralConfiguration memory collateralConfiguration = $
+            ._pool
+            .getCollateralAssetConfiguration(collateralAsset);
+
+        collateralConfiguration.borrowCap = borrowCap;
+
+        $._pool.setCollateralConfiguration(
+            collateralAsset,
+            collateralConfiguration
+        );
+    }
+
+    function setDebtConfiguration(
+        address debtAsset,
+        IPool.DebtConfiguration memory debtConfiguration
+    ) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        $._pool.setDebtConfiguration(debtAsset, debtConfiguration);
+    }
+
+    function setDebtSupplyCap(
+        address debtAsset,
+        uint256 supplyCap
+    ) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        IPool.DebtConfiguration memory debtConfiguration = $
+            ._pool
+            .getDebtAssetConfiguration(debtAsset);
+
+        debtConfiguration.supplyCap = supplyCap;
+
+        $._pool.setDebtConfiguration(debtAsset, debtConfiguration);
+    }
+
+    function setDebtReserveFactor(
+        address debtAsset,
+        uint16 reserveFactor
+    ) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        IPool.DebtConfiguration memory debtConfiguration = $
+            ._pool
+            .getDebtAssetConfiguration(debtAsset);
+
+        debtConfiguration.reserveFactor = reserveFactor;
+
+        $._pool.setDebtConfiguration(debtAsset, debtConfiguration);
+    }
+
+    function freezeCollateral(address collateralAsset) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        IPool.CollateralConfiguration memory collateralConfiguration = $
+            ._pool
+            .getCollateralAssetConfiguration(collateralAsset);
+
+        collateralConfiguration.isFrozen = true;
+
+        $._pool.setCollateralConfiguration(
+            collateralAsset,
+            collateralConfiguration
+        );
+    }
+
+    function freezeDebt(address debtAsset) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        IPool.DebtConfiguration memory debtConfiguration = $
+            ._pool
+            .getDebtAssetConfiguration(debtAsset);
+
+        debtConfiguration.isFrozen = true;
+
+        $._pool.setDebtConfiguration(debtAsset, debtConfiguration);
+    }
+
+    function pauseCollateral(address collateralAsset) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        IPool.CollateralConfiguration memory collateralConfiguration = $
+            ._pool
+            .getCollateralAssetConfiguration(collateralAsset);
+
+        collateralConfiguration.isPaused = true;
+
+        $._pool.setCollateralConfiguration(
+            collateralAsset,
+            collateralConfiguration
+        );
+    }
+
+    function pauseDebt(address debtAsset) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        IPool.DebtConfiguration memory debtConfiguration = $
+            ._pool
+            .getDebtAssetConfiguration(debtAsset);
+
+        debtConfiguration.isPaused = true;
+
+        $._pool.setDebtConfiguration(debtAsset, debtConfiguration);
+    }
+
+    function unfreezeCollateral(address collateralAsset) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        IPool.CollateralConfiguration memory collateralConfiguration = $
+            ._pool
+            .getCollateralAssetConfiguration(collateralAsset);
+
+        collateralConfiguration.isFrozen = false;
+
+        $._pool.setCollateralConfiguration(
+            collateralAsset,
+            collateralConfiguration
+        );
+    }
+
+    function unfreezeDebt(address debtAsset) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        IPool.DebtConfiguration memory debtConfiguration = $
+            ._pool
+            .getDebtAssetConfiguration(debtAsset);
+
+        debtConfiguration.isFrozen = false;
+
+        $._pool.setDebtConfiguration(debtAsset, debtConfiguration);
+    }
+
+    function unpauseCollateral(address collateralAsset) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        IPool.CollateralConfiguration memory collateralConfiguration = $
+            ._pool
+            .getCollateralAssetConfiguration(collateralAsset);
+
+        collateralConfiguration.isPaused = false;
+
+        $._pool.setCollateralConfiguration(
+            collateralAsset,
+            collateralConfiguration
+        );
+    }
+
+    function unpauseDebt(address debtAsset) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        IPool.DebtConfiguration memory debtConfiguration = $
+            ._pool
+            .getDebtAssetConfiguration(debtAsset);
+
+        debtConfiguration.isPaused = false;
+
+        $._pool.setDebtConfiguration(debtAsset, debtConfiguration);
+    }
+}

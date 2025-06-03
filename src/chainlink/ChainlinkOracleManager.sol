@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {AccessManaged} from "openzeppelin-contracts/access/manager/AccessManaged.sol";
-import {EnumerableMap} from "openzeppelin-contracts/utils/structs/EnumerableMap.sol";
+import {AccessManaged} from "@openzeppelin/contracts/access/manager/AccessManaged.sol";
+import {EnumerableMap} from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import {IChainlinkOracleManager} from "../interfaces/chainlink/IChainlinkOracleManager.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 

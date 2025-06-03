@@ -1,19 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {IERC20} from "openzeppelin-contracts/token/ERC20/IERC20.sol";
-import {IERC20Metadata} from "openzeppelin-contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import {SafeERC20} from "openzeppelin-contracts/token/ERC20/utils/SafeERC20.sol";
-import {AccessManaged} from "openzeppelin-contracts/access/manager/AccessManaged.sol";
-import {EnumerableSet} from "openzeppelin-contracts/utils/structs/EnumerableSet.sol";
 import {IColToken} from "../interfaces/tokenization/IColToken.sol";
 import {IDebtEUR} from "../interfaces/tokenization/IDebtEUR.sol";
 import {IColEUR} from "../interfaces/tokenization/IColEUR.sol";
 import {IPool} from "../interfaces/pool/IPool.sol";
 import {IVault} from "../interfaces/vault/IVault.sol";
 import {IChainlinkOracleManager} from "../interfaces/chainlink/IChainlinkOracleManager.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {AccessManaged} from "@openzeppelin/contracts/access/manager/AccessManaged.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {AccessManagedUpgradeable} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-contract Pool is AccessManaged, IPool {
+contract Pool is
+    Initializable,
+    AccessManagedUpgradeable,
+    ReentrancyGuardUpgradeable,
+    UUPSUpgradeable,
+    IPool
+{
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -38,13 +48,25 @@ contract Pool is AccessManaged, IPool {
         }
     }
 
-    constructor(
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
         address initialAuthority,
         address oracleManager
-    ) AccessManaged(initialAuthority) {
+    ) public initializer {
+        __AccessManaged_init(initialAuthority);
+        __UUPSUpgradeable_init();
+
         PoolStorage storage $ = _getPoolStorage();
         $._oracleManager = IChainlinkOracleManager(oracleManager);
     }
+
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override restricted {}
 
     function supply(
         address asset,

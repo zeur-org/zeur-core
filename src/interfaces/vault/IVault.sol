@@ -29,10 +29,6 @@ interface IVault {
     /// @notice Get the current staking router
     function getCurrentStakingRouter() external view returns (address);
 
-    /// @notice Update the default router selection parameters (e.g., weights, thresholds)
-    /// @param params  Encoded strategy parameters
-    function configureSelection(bytes calldata params) external;
-
     /// ─── Protocol Selection ───────────────────────────────
 
     /// @notice Return the router to use given current conditions

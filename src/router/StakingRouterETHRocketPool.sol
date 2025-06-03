@@ -1,24 +1,27 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {IERC20} from "openzeppelin-contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "openzeppelin-contracts/token/ERC20/utils/SafeERC20.sol";
-import {AccessManaged} from "openzeppelin-contracts/access/manager/AccessManaged.sol";
-import {ReentrancyGuard} from "openzeppelin-contracts/utils/ReentrancyGuard.sol";
-import {IStakingRouter} from "../interfaces/router/IStakingRouter.sol";
+import {ETH_ADDRESS, CALC_BASE} from "../helpers/Constants.sol";
 import {IRETH} from "../interfaces/lst/rocket-pool/IRETH.sol";
 import {IRocketDepositPool} from "../interfaces/lst/rocket-pool/IRocketDepositPool.sol";
 import {IRocketDAOProtocolSettingsDeposit} from "../interfaces/lst/rocket-pool/IRocketDAOProtocolSettingsDeposit.sol";
 import {IRocketStorage} from "../interfaces/lst/rocket-pool/IRocketStorage.sol";
-import {ETH_ADDRESS} from "../helpers/Constants.sol";
+import {IStakingRouter} from "../interfaces/router/IStakingRouter.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {AccessManagedUpgradeable} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 contract StakingRouterETHRocketPool is
-    AccessManaged,
-    ReentrancyGuard,
+    Initializable,
+    AccessManagedUpgradeable,
+    ReentrancyGuardUpgradeable,
+    UUPSUpgradeable,
     IStakingRouter
 {
     using SafeERC20 for IERC20;
-    uint256 constant CALC_BASE = 1e18;
 
     struct StakingRouterETHRocketPoolStorage {
         IRETH _reth;
@@ -41,12 +44,20 @@ contract StakingRouterETHRocketPool is
         }
     }
 
-    constructor(
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
         address initialAuthority,
         address reth,
         address depositPool,
         address protocolSettings
-    ) AccessManaged(initialAuthority) {
+    ) public initializer {
+        __AccessManaged_init(initialAuthority);
+        __UUPSUpgradeable_init();
+
         StakingRouterETHRocketPoolStorage
             storage $ = _getStakingRouterETHRocketPoolStorage();
 
@@ -56,6 +67,10 @@ contract StakingRouterETHRocketPool is
             protocolSettings
         );
     }
+
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override restricted {}
 
     function stake(
         uint256 amount,

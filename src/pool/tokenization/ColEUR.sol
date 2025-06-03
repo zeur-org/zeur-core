@@ -14,4 +14,34 @@ contract ColEUR is ERC4626, AccessManaged {
         ERC4626(asset)
         AccessManaged(initialAuthority)
     {}
+
+    function mint(
+        uint256 shares,
+        address receiver
+    ) public override restricted returns (uint256) {
+        return super.mint(shares, receiver);
+    }
+
+    function redeem(
+        uint256 shares,
+        address receiver,
+        address owner
+    ) public virtual override restricted returns (uint256) {
+        return super.redeem(shares, receiver, owner);
+    }
+
+    function deposit(
+        uint256 assets,
+        address receiver
+    ) public override restricted returns (uint256) {
+        return super.deposit(assets, receiver);
+    }
+
+    function withdraw(
+        uint256 assets,
+        address receiver,
+        address owner
+    ) public override restricted returns (uint256) {
+        return super.withdraw(assets, receiver, owner);
+    }
 }

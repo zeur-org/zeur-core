@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {IStakingRouter} from "../interfaces/router/IStakingRouter.sol";
-import {ETH_ADDRESS} from "../helpers/Constants.sol";
+import {IStakingRouter} from "../../interfaces/router/IStakingRouter.sol";
+import {ETH_ADDRESS} from "../../helpers/Constants.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
@@ -20,8 +20,9 @@ contract StakingRouterLINK is
     using SafeERC20 for IERC20;
 
     struct StakingRouterLINKStorage {
-        IERC20 _underlyingToken;
-        IERC20 _stakedToken;
+        uint256 _totalStakedUnderlying;
+        IERC20 _link;
+        IERC20 _stLINK;
         IERC20 _vaultLink;
     }
 
@@ -55,8 +56,8 @@ contract StakingRouterLINK is
 
         StakingRouterLINKStorage storage $ = _getStakingRouterLINKStorage();
 
-        $._underlyingToken = IERC20(linkToken);
-        $._stakedToken = IERC20(stLinkToken);
+        $._link = IERC20(linkToken);
+        $._stLINK = IERC20(stLinkToken);
         $._vaultLink = IERC20(vaultLink);
     }
 
@@ -66,25 +67,35 @@ contract StakingRouterLINK is
 
     function stake(uint256 amount, address receiver) external payable {
         StakingRouterLINKStorage storage $ = _getStakingRouterLINKStorage();
-        $._underlyingToken.transferFrom(msg.sender, address(this), amount);
+        $._link.transferFrom(msg.sender, address(this), amount);
 
-        $._stakedToken.approve(address(this), amount);
-        uint256 sharesAmount = $._stakedToken.getSharesByStake(amount);
+        $._stLINK.approve(address(this), amount);
+        // uint256 sharesAmount = $._stakedToken.getSharesByStake(amount);
 
         // TODO: Stake
+
+        $._totalStakedUnderlying += amount;
     }
 
-    function unstake(uint256 amount, address receiver) external {}
+    function unstake(uint256 amount, address receiver) external {
+        StakingRouterLINKStorage storage $ = _getStakingRouterLINKStorage();
+        $._stLINK.transferFrom(address(this), receiver, amount);
+
+        $._totalStakedUnderlying -= amount;
+    }
 
     function getUnderlyingToken() external view returns (address) {
         StakingRouterLINKStorage storage $ = _getStakingRouterLINKStorage();
-        return address($._underlyingToken);
+        return address($._link);
     }
 
     function getStakedToken() external view returns (address) {
         StakingRouterLINKStorage storage $ = _getStakingRouterLINKStorage();
-        return address($._stakedToken);
+        return address($._stLINK);
     }
 
-    function getTotalStakedUnderlying() external view returns (uint256) {}
+    function getTotalStakedUnderlying() external view returns (uint256) {
+        StakingRouterLINKStorage storage $ = _getStakingRouterLINKStorage();
+        return $._totalStakedUnderlying;
+    }
 }

@@ -5,7 +5,14 @@ pragma solidity ^0.8.30;
 /// @notice Interface for the ETH vault
 /// @dev This interface defines the functions for the ETH vault
 interface IVault {
-    /// ─── Registry & Configuration ─────────────────────────
+    error Vault_InvalidStakingRouter(address router);
+    error Vault_StakingRouterAlreadyAdded(address router);
+    error Vault_StakingRouterAlreadyRemoved(address router);
+
+    event StakingRouterAdded(address indexed router);
+    event StakingRouterRemoved(address indexed router);
+    event CurrentStakingRouterUpdated(address indexed router);
+    event CurrentUnstakingRouterUpdated(address indexed router);
 
     /// @notice Register a new staking router for an asset
     /// @param router  Address of the StakingRouter
@@ -29,16 +36,8 @@ interface IVault {
     /// @notice Get the current staking router
     function getCurrentStakingRouter() external view returns (address);
 
-    /// ─── Protocol Selection ───────────────────────────────
-
-    /// @notice Return the router to use given current conditions
-    /// @dev Could be on‐chain price‐based, round‐robin, or weight‐based
-    function getCurrentRouter() external view returns (address);
-
     /// @notice List all registered routers
     function getStakingRouters() external view returns (address[] memory);
-
-    /// ─── Collateral Routing ───────────────────────────────
 
     /// @notice Stakes user ETH into the selected LST protocol
     /// @param from    The LendingPool (msg.sender)
@@ -50,11 +49,6 @@ interface IVault {
     /// @param amount  Amount of ETH equivalent to unstake
     function unlockCollateral(address to, uint256 amount) external;
 
-    /// ─── Rebalancing & Emergency ─────────────────────────
-
     /// @notice Force a rebalance across routers (called by Keeper or Manager)
     function rebalance() external;
-
-    /// @notice Emergency unstake from all routers back to vault
-    function emergencyUnstakeAll() external;
 }

@@ -54,69 +54,63 @@ contract VaultETH is
         address newImplementation
     ) internal override restricted {}
 
-    function addStakingRouter(address router) external override {
+    function addStakingRouter(address router) external {
         VaultETHStorage storage $ = _getVaultETHStorage();
+
+        if ($._stakingRouters.contains(router))
+            revert Vault_StakingRouterAlreadyAdded(router);
+
         $._stakingRouters.add(router);
+        emit StakingRouterAdded(router);
     }
 
-    function removeStakingRouter(address router) external override {
+    function removeStakingRouter(address router) external {
         VaultETHStorage storage $ = _getVaultETHStorage();
+
+        if (!$._stakingRouters.contains(router))
+            revert Vault_StakingRouterAlreadyRemoved(router);
+
         $._stakingRouters.remove(router);
+        emit StakingRouterRemoved(router);
     }
 
-    function updateCurrentStakingRouter(address router) external override {
+    function updateCurrentStakingRouter(address router) external {
         VaultETHStorage storage $ = _getVaultETHStorage();
+        if (!$._stakingRouters.contains(router))
+            revert Vault_InvalidStakingRouter(router);
+
         $._currentStakingRouter = router;
+        emit CurrentStakingRouterUpdated(router);
     }
 
-    function updateCurrentUnstakingRouter(address router) external override {
+    function updateCurrentUnstakingRouter(address router) external {
         VaultETHStorage storage $ = _getVaultETHStorage();
+
+        if (!$._stakingRouters.contains(router))
+            revert Vault_InvalidStakingRouter(router);
+
         $._currentUnstakingRouter = router;
+        emit CurrentUnstakingRouterUpdated(router);
     }
 
-    function getCurrentStakingRouter()
-        external
-        view
-        override
-        returns (address)
-    {
+    function getCurrentStakingRouter() external view returns (address) {
         VaultETHStorage storage $ = _getVaultETHStorage();
         return $._currentStakingRouter;
     }
 
-    function getCurrentUnstakingRouter()
-        external
-        view
-        override
-        returns (address)
-    {
+    function getCurrentUnstakingRouter() external view returns (address) {
         VaultETHStorage storage $ = _getVaultETHStorage();
         return $._currentUnstakingRouter;
     }
 
-    function getCurrentRouter() external view override returns (address) {
-        VaultETHStorage storage $ = _getVaultETHStorage();
-        return $._currentStakingRouter;
-    }
-
-    function getStakingRouters()
-        external
-        view
-        override
-        returns (address[] memory)
-    {
+    function getStakingRouters() external view returns (address[] memory) {
         VaultETHStorage storage $ = _getVaultETHStorage();
         return $._stakingRouters.values();
     }
 
-    function lockCollateral(
-        address from,
-        uint256 amount
-    ) external payable override {}
+    function lockCollateral(address from, uint256 amount) external payable {}
 
-    function unlockCollateral(address to, uint256 amount) external override {}
+    function unlockCollateral(address to, uint256 amount) external {}
 
-    function rebalance() external override {}
-
-    function emergencyUnstakeAll() external override {}
+    function rebalance() external {}
 }

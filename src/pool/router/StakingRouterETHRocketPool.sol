@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {ETH_ADDRESS, CALC_BASE} from "../helpers/Constants.sol";
-import {IRETH} from "../interfaces/lst/rocket-pool/IRETH.sol";
-import {IRocketDepositPool} from "../interfaces/lst/rocket-pool/IRocketDepositPool.sol";
-import {IRocketDAOProtocolSettingsDeposit} from "../interfaces/lst/rocket-pool/IRocketDAOProtocolSettingsDeposit.sol";
-import {IRocketStorage} from "../interfaces/lst/rocket-pool/IRocketStorage.sol";
-import {IStakingRouter} from "../interfaces/router/IStakingRouter.sol";
+import {ETH_ADDRESS, CALC_BASE} from "../../helpers/Constants.sol";
+import {IRETH} from "../../interfaces/lst/rocket-pool/IRETH.sol";
+import {IRocketDepositPool} from "../../interfaces/lst/rocket-pool/IRocketDepositPool.sol";
+import {IRocketDAOProtocolSettingsDeposit} from "../../interfaces/lst/rocket-pool/IRocketDAOProtocolSettingsDeposit.sol";
+import {IStakingRouter} from "../../interfaces/router/IStakingRouter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
@@ -28,7 +27,6 @@ contract StakingRouterETHRocketPool is
         IRETH _reth;
         IRocketDepositPool _depositPool;
         IRocketDAOProtocolSettingsDeposit _protocolSettings;
-        IRocketStorage _rocketStorage;
     }
 
     // keccak256(abi.encode(uint256(keccak256("Zeur.storage.StakingRouterETHRocketPool")) - 1)) & ~bytes32(uint256(0xff))

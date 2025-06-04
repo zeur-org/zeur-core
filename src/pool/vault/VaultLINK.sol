@@ -2,16 +2,44 @@
 pragma solidity ^0.8.30;
 
 import {IVaultLINK} from "../../interfaces/vault/IVaultLINK.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {AccessManagedUpgradeable} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 contract VaultLINK is
     Initializable,
     AccessManagedUpgradeable,
+    ReentrancyGuardUpgradeable,
     UUPSUpgradeable,
     IVaultLINK
 {
+    using SafeERC20 for IERC20;
+    using EnumerableSet for EnumerableSet.AddressSet;
+
+    struct VaultLINKStorage {
+        address _currentStakingRouter;
+        address _currentUnstakingRouter;
+        EnumerableSet.AddressSet _stakingRouters;
+    }
+
+    // keccak256(abi.encode(uint256(keccak256("Zeur.storage.VaultLINK")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant VaultLINKStorageLocation =
+        0xf1bb71ad1b66af00c66d93c929e3bf8ea5561f985cd82896f24f2b9c63a7fd00;
+
+    function _getVaultLINKStorage()
+        private
+        pure
+        returns (VaultLINKStorage storage $)
+    {
+        assembly {
+            $.slot := VaultLINKStorageLocation
+        }
+    }
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -25,4 +53,64 @@ contract VaultLINK is
     function _authorizeUpgrade(
         address newImplementation
     ) internal override restricted {}
+
+    function addStakingRouter(address router) external {
+        VaultLINKStorage storage $ = _getVaultLINKStorage();
+
+        if ($._stakingRouters.contains(router))
+            revert Vault_StakingRouterAlreadyAdded(router);
+
+        $._stakingRouters.add(router);
+        emit StakingRouterAdded(router);
+    }
+
+    function removeStakingRouter(address router) external {
+        VaultLINKStorage storage $ = _getVaultLINKStorage();
+
+        if (!$._stakingRouters.contains(router))
+            revert Vault_StakingRouterAlreadyRemoved(router);
+
+        $._stakingRouters.remove(router);
+        emit StakingRouterRemoved(router);
+    }
+
+    function updateCurrentStakingRouter(address router) external {
+        VaultLINKStorage storage $ = _getVaultLINKStorage();
+        if (!$._stakingRouters.contains(router))
+            revert Vault_InvalidStakingRouter(router);
+
+        $._currentStakingRouter = router;
+        emit CurrentStakingRouterUpdated(router);
+    }
+
+    function updateCurrentUnstakingRouter(address router) external {
+        VaultLINKStorage storage $ = _getVaultLINKStorage();
+
+        if (!$._stakingRouters.contains(router))
+            revert Vault_InvalidStakingRouter(router);
+
+        $._currentUnstakingRouter = router;
+        emit CurrentUnstakingRouterUpdated(router);
+    }
+
+    function getCurrentStakingRouter() external view returns (address) {
+        VaultLINKStorage storage $ = _getVaultLINKStorage();
+        return $._currentStakingRouter;
+    }
+
+    function getCurrentUnstakingRouter() external view returns (address) {
+        VaultLINKStorage storage $ = _getVaultLINKStorage();
+        return $._currentUnstakingRouter;
+    }
+
+    function getStakingRouters() external view returns (address[] memory) {
+        VaultLINKStorage storage $ = _getVaultLINKStorage();
+        return $._stakingRouters.values();
+    }
+
+    function lockCollateral(address from, uint256 amount) external payable {}
+
+    function unlockCollateral(address to, uint256 amount) external {}
+
+    function rebalance() external {}
 }

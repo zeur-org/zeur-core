@@ -19,6 +19,26 @@ contract StakingRouterETHEtherfi is
 {
     using SafeERC20 for IERC20;
 
+    struct StakingRouterETHEtherfiStorage {
+        uint256 _totalStakedUnderlying;
+        IERC20 _underlyingToken;
+        IERC20 _stakedToken;
+    }
+
+    // keccak256(abi.encode(uint256(keccak256("Zeur.storage.StakingRouterETHEtherfi")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant StakingRouterETHEtherfiStorageLocation =
+        0x4919a4906d22854e05d6bedefd40c3e02eba2bf042b0fbf851a3d8cafc07ca00;
+
+    function _getStakingRouterETHEtherfiStorage()
+        private
+        pure
+        returns (StakingRouterETHEtherfiStorage storage $)
+    {
+        assembly {
+            $.slot := StakingRouterETHEtherfiStorageLocation
+        }
+    }
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -33,23 +53,20 @@ contract StakingRouterETHEtherfi is
         address newImplementation
     ) internal override restricted {}
 
-    function stake(uint256 amount, address receiver) external override {}
+    function stake(
+        uint256 amount,
+        address receiver
+    ) external payable restricted {}
 
-    function unstake(uint256 amount, address receiver) external override {}
+    function unstake(uint256 amount, address receiver) external restricted {}
 
-    function claimRewards() external override {}
+    function getUnderlyingToken() external pure returns (address) {
+        return ETH_ADDRESS;
+    }
 
-    function getUnderlyingToken() external view override returns (address) {}
+    function getStakedToken() external pure returns (address) {
+        return address(0);
+    }
 
-    function getStakedToken() external view override returns (address) {}
-
-    function getTotalUnderlying() external view override returns (uint256) {}
-
-    function getTotalStaked() external view override returns (uint256) {}
-
-    function getYieldCurrent() external view override returns (uint256) {}
-
-    function getYieldPreview(
-        uint256 amount
-    ) external view override returns (uint256) {}
+    function getTotalStakedUnderlying() external view returns (uint256) {}
 }

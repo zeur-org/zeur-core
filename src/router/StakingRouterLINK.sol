@@ -64,7 +64,7 @@ contract StakingRouterLINK is
         address newImplementation
     ) internal override restricted {}
 
-    function stake(uint256 amount, address receiver) external {
+    function stake(uint256 amount, address receiver) external payable {
         StakingRouterLINKStorage storage $ = _getStakingRouterLINKStorage();
         $._underlyingToken.transferFrom(msg.sender, address(this), amount);
 
@@ -76,8 +76,6 @@ contract StakingRouterLINK is
 
     function unstake(uint256 amount, address receiver) external {}
 
-    function claimRewards() external {}
-
     function getUnderlyingToken() external view returns (address) {
         StakingRouterLINKStorage storage $ = _getStakingRouterLINKStorage();
         return address($._underlyingToken);
@@ -88,11 +86,5 @@ contract StakingRouterLINK is
         return address($._stakedToken);
     }
 
-    function getTotalUnderlying() external view returns (uint256) {}
-
-    function getTotalStaked() external view returns (uint256) {}
-
-    function getYieldCurrent() external view returns (uint256) {}
-
-    function getYieldPreview(uint256 amount) external view returns (uint256) {}
+    function getTotalStakedUnderlying() external view returns (uint256) {}
 }

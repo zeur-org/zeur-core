@@ -5,7 +5,7 @@ import {AccessManaged} from "@openzeppelin/contracts/access/manager/AccessManage
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 
-contract DebtToken is ERC20, ERC20Permit, AccessManaged {
+contract DebtEUR is ERC20, ERC20Permit, AccessManaged {
     constructor(
         string memory name,
         string memory symbol,

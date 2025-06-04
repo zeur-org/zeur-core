@@ -24,6 +24,7 @@ contract StakingRouterETHRocketPool is
     using SafeERC20 for IERC20;
 
     struct StakingRouterETHRocketPoolStorage {
+        uint256 _totalStakedUnderlying;
         IRETH _reth;
         IRocketDepositPool _depositPool;
         IRocketDAOProtocolSettingsDeposit _protocolSettings;
@@ -75,7 +76,7 @@ contract StakingRouterETHRocketPool is
     function stake(
         uint256 amount,
         address receiver
-    ) external override nonReentrant restricted {
+    ) external payable nonReentrant restricted {
         StakingRouterETHRocketPoolStorage
             storage $ = _getStakingRouterETHRocketPoolStorage();
 
@@ -89,12 +90,14 @@ contract StakingRouterETHRocketPool is
 
         // Mint rETH to the receiver
         IERC20($._reth).safeTransfer(receiver, rEthAmount);
+
+        $._totalStakedUnderlying += amount;
     }
 
     function unstake(
         uint256 amount,
         address receiver
-    ) external override nonReentrant restricted {
+    ) external nonReentrant restricted {
         StakingRouterETHRocketPoolStorage
             storage $ = _getStakingRouterETHRocketPoolStorage();
 
@@ -105,28 +108,25 @@ contract StakingRouterETHRocketPool is
         uint256 ethAmount = $._reth.getEthValue(amount);
         (bool success, ) = payable(receiver).call{value: ethAmount}("");
         if (!success) revert StakingRouter_FailedToTransfer();
+
+        $._totalStakedUnderlying -= amount;
     }
 
-    function claimRewards() external override restricted {}
-
-    function getUnderlyingToken() external pure override returns (address) {
+    function getUnderlyingToken() external pure returns (address) {
         return ETH_ADDRESS;
     }
 
-    function getStakedToken() external view override returns (address) {
+    function getStakedToken() external view returns (address) {
         StakingRouterETHRocketPoolStorage
             storage $ = _getStakingRouterETHRocketPoolStorage();
 
         return address($._reth);
     }
 
-    function getTotalUnderlying() external view override returns (uint256) {}
+    function getTotalStakedUnderlying() external view returns (uint256) {
+        StakingRouterETHRocketPoolStorage
+            storage $ = _getStakingRouterETHRocketPoolStorage();
 
-    function getTotalStaked() external view override returns (uint256) {}
-
-    function getYieldCurrent() external view override returns (uint256) {}
-
-    function getYieldPreview(
-        uint256 amount
-    ) external view override returns (uint256) {}
+        return $._totalStakedUnderlying;
+    }
 }

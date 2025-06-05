@@ -24,7 +24,7 @@ contract StakingRouterETHRocketPool is
 
     struct StakingRouterETHRocketPoolStorage {
         uint256 _totalStakedUnderlying;
-        IRETH _reth;
+        IRETH _rETH; // LST token
         IRocketDepositPool _depositPool;
         IRocketDAOProtocolSettingsDeposit _protocolSettings;
     }
@@ -50,7 +50,7 @@ contract StakingRouterETHRocketPool is
 
     function initialize(
         address initialAuthority,
-        address reth,
+        address rETH,
         address depositPool,
         address protocolSettings
     ) public initializer {
@@ -60,7 +60,7 @@ contract StakingRouterETHRocketPool is
         StakingRouterETHRocketPoolStorage
             storage $ = _getStakingRouterETHRocketPoolStorage();
 
-        $._reth = IRETH(reth);
+        $._rETH = IRETH(rETH);
         $._depositPool = IRocketDepositPool(depositPool);
         $._protocolSettings = IRocketDAOProtocolSettingsDeposit(
             protocolSettings
@@ -81,13 +81,13 @@ contract StakingRouterETHRocketPool is
         uint256 fee = (amount * $._protocolSettings.getDepositFee()) /
             CALC_BASE;
         uint256 ethDepositNet = amount - fee;
-        uint256 rEthAmount = $._reth.getRethValue(ethDepositNet);
+        uint256 rEthAmount = $._rETH.getRethValue(ethDepositNet);
 
         // Deposit ETH into the deposit pool
         $._depositPool.deposit{value: ethDepositNet}();
 
         // Mint rETH to the receiver
-        IERC20($._reth).safeTransfer(receiver, rEthAmount);
+        IERC20($._rETH).safeTransfer(receiver, rEthAmount);
 
         $._totalStakedUnderlying += amount;
     }
@@ -99,11 +99,11 @@ contract StakingRouterETHRocketPool is
         StakingRouterETHRocketPoolStorage
             storage $ = _getStakingRouterETHRocketPoolStorage();
 
-        $._reth.transferFrom(msg.sender, address(this), amount);
-        $._reth.burn(amount);
+        $._rETH.transferFrom(msg.sender, address(this), amount);
+        $._rETH.burn(amount);
 
         // Transfer back ETH to final receiver
-        uint256 ethAmount = $._reth.getEthValue(amount);
+        uint256 ethAmount = $._rETH.getEthValue(amount);
         (bool success, ) = payable(receiver).call{value: ethAmount}("");
         if (!success) revert StakingRouter_FailedToTransfer();
 
@@ -118,7 +118,7 @@ contract StakingRouterETHRocketPool is
         StakingRouterETHRocketPoolStorage
             storage $ = _getStakingRouterETHRocketPoolStorage();
 
-        return address($._reth);
+        return address($._rETH);
     }
 
     function getTotalStakedUnderlying() external view returns (uint256) {

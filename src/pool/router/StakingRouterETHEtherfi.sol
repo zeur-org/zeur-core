@@ -21,8 +21,8 @@ contract StakingRouterETHEtherfi is
 
     struct StakingRouterETHEtherfiStorage {
         uint256 _totalStakedUnderlying;
-        IERC20 _underlyingToken;
-        IERC20 _stakedToken;
+        IERC20 _eETH; // LST token
+        IERC20 _underlyingToken; // Underlying token
     }
 
     // keccak256(abi.encode(uint256(keccak256("Zeur.storage.StakingRouterETHEtherfi")) - 1)) & ~bytes32(uint256(0xff))
@@ -53,10 +53,20 @@ contract StakingRouterETHEtherfi is
         address newImplementation
     ) internal override restricted {}
 
+    // transferFrom(vault, router, amount)
+    // => approve(lstPool, amount)
+    // => lstPool.deposit(amount)
+    // => lst.transfer(vault, lstAmount)
     function stake(
         uint256 amount,
         address receiver
-    ) external payable restricted {}
+    ) external payable restricted {
+        uint256 amount = msg.value;
+
+        if (amount == 0) revert StakingRouter_InvalidAmount();
+        StakingRouterETHEtherfiStorage
+            storage $ = _getStakingRouterETHEtherfiStorage();
+    }
 
     function unstake(uint256 amount, address receiver) external restricted {}
 
@@ -64,9 +74,17 @@ contract StakingRouterETHEtherfi is
         return ETH_ADDRESS;
     }
 
-    function getStakedToken() external pure returns (address) {
-        return address(0);
+    function getStakedToken() external view returns (address) {
+        StakingRouterETHEtherfiStorage
+            storage $ = _getStakingRouterETHEtherfiStorage();
+
+        return address($._eETH);
     }
 
-    function getTotalStakedUnderlying() external view returns (uint256) {}
+    function getTotalStakedUnderlying() external view returns (uint256) {
+        StakingRouterETHEtherfiStorage
+            storage $ = _getStakingRouterETHEtherfiStorage();
+
+        return $._totalStakedUnderlying;
+    }
 }

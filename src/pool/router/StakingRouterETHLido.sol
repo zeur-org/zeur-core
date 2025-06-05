@@ -23,7 +23,7 @@ contract StakingRouterETHLido is
 
     struct StakingRouterETHLidoStorage {
         uint256 _totalStakedUnderlying;
-        ILido _lido;
+        ILido _stETH; // LST token
         IWithdrawalQueueERC721 _withdrawalQueueERC721;
     }
 
@@ -48,7 +48,7 @@ contract StakingRouterETHLido is
 
     function initialize(
         address initialAuthority,
-        address lido,
+        address stETH,
         address withdrawalQueueERC721
     ) public initializer {
         __AccessManaged_init(initialAuthority);
@@ -57,7 +57,7 @@ contract StakingRouterETHLido is
         StakingRouterETHLidoStorage
             storage $ = _getStakingRouterETHLidoStorage();
 
-        $._lido = ILido(lido);
+        $._stETH = ILido(stETH);
         $._withdrawalQueueERC721 = IWithdrawalQueueERC721(
             withdrawalQueueERC721
         );
@@ -74,9 +74,9 @@ contract StakingRouterETHLido is
         StakingRouterETHLidoStorage
             storage $ = _getStakingRouterETHLidoStorage();
 
-        uint256 stETHAmount = $._lido.submit{value: amount}(receiver);
+        uint256 stETHAmount = $._stETH.submit{value: amount}(receiver);
 
-        IERC20(address($._lido)).safeTransfer(receiver, stETHAmount);
+        IERC20(address($._stETH)).safeTransfer(receiver, stETHAmount);
 
         $._totalStakedUnderlying += amount;
     }
@@ -85,7 +85,7 @@ contract StakingRouterETHLido is
         StakingRouterETHLidoStorage
             storage $ = _getStakingRouterETHLidoStorage();
 
-        IERC20 stETH = IERC20(address($._lido));
+        IERC20 stETH = IERC20(address($._stETH));
 
         stETH.safeTransferFrom(msg.sender, address(this), amount);
         stETH.approve(address($._withdrawalQueueERC721), amount);
@@ -93,9 +93,21 @@ contract StakingRouterETHLido is
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = amount;
 
-        $._withdrawalQueueERC721.requestWithdrawals(amounts, receiver);
+        // Send withdrawal request
+        uint256[] memory requestIds = $
+            ._withdrawalQueueERC721
+            .requestWithdrawals(amounts, address(this));
+
+        // TODO: Store this requestId to claimWithdrawal later
 
         $._totalStakedUnderlying -= amount;
+    }
+
+    function claimUnstake(uint256 requestId) external restricted {
+        StakingRouterETHLidoStorage
+            storage $ = _getStakingRouterETHLidoStorage();
+
+        $._withdrawalQueueERC721.claimWithdrawal(requestId);
     }
 
     function getUnderlyingToken() external pure returns (address) {
@@ -106,7 +118,7 @@ contract StakingRouterETHLido is
         StakingRouterETHLidoStorage
             storage $ = _getStakingRouterETHLidoStorage();
 
-        return address($._lido);
+        return address($._stETH);
     }
 
     function getTotalStakedUnderlying() external view returns (uint256) {

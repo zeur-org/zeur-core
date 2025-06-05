@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {IStakingRouter} from "../../interfaces/router/IStakingRouter.sol";
 import {ETH_ADDRESS} from "../../helpers/Constants.sol";
+import {IStakingRouter} from "../../interfaces/router/IStakingRouter.sol";
+import {IPriorityPool} from "../../interfaces/lst/stake-link/IPriorityPool.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
@@ -21,9 +22,9 @@ contract StakingRouterLINK is
 
     struct StakingRouterLINKStorage {
         uint256 _totalStakedUnderlying;
-        IERC20 _link;
-        IERC20 _stLINK;
-        IERC20 _vaultLink;
+        IERC20 _stLINK; // LST token
+        IERC20 _link; // Underlying token
+        IPriorityPool _linkPriorityPool;
     }
 
     // keccak256(abi.encode(uint256(keccak256("Zeur.storage.StakingRouterLINK")) - 1)) & ~bytes32(uint256(0xff))
@@ -49,7 +50,7 @@ contract StakingRouterLINK is
         address initialAuthority,
         address linkToken,
         address stLinkToken,
-        address vaultLink
+        address linkPriorityPool
     ) public initializer {
         __AccessManaged_init(initialAuthority);
         __UUPSUpgradeable_init();
@@ -58,7 +59,7 @@ contract StakingRouterLINK is
 
         $._link = IERC20(linkToken);
         $._stLINK = IERC20(stLinkToken);
-        $._vaultLink = IERC20(vaultLink);
+        $._linkPriorityPool = IPriorityPool(linkPriorityPool);
     }
 
     function _authorizeUpgrade(
@@ -67,21 +68,45 @@ contract StakingRouterLINK is
 
     function stake(uint256 amount, address receiver) external payable {
         StakingRouterLINKStorage storage $ = _getStakingRouterLINKStorage();
+
+        // Update the total staked underlying
+        $._totalStakedUnderlying += amount;
+
+        // Transfer LINK from the Vault to the router
         $._link.transferFrom(msg.sender, address(this), amount);
 
-        $._stLINK.approve(address(this), amount);
-        // uint256 sharesAmount = $._stakedToken.getSharesByStake(amount);
+        // Approve the stake.link priority pool to spend the LINK
+        $._link.approve(address($._linkPriorityPool), amount);
 
-        // TODO: Stake
+        // Stake the LINK in the priority pool
+        bytes[] memory data = new bytes[](0); // TODO: Add data
+        $._linkPriorityPool.deposit(amount, false, data);
 
-        $._totalStakedUnderlying += amount;
+        // TODO: get the return stLINK amount and transfer back to VaultLINK
     }
 
     function unstake(uint256 amount, address receiver) external {
         StakingRouterLINKStorage storage $ = _getStakingRouterLINKStorage();
-        $._stLINK.transferFrom(address(this), receiver, amount);
-
         $._totalStakedUnderlying -= amount;
+
+        // Transfer stLINK from the router to the Vault
+        $._stLINK.transferFrom(msg.sender, address(this), amount);
+
+        // TODO: Withdraw the LINK from the priority pool
+        $._linkPriorityPool.withdraw(
+            amount, // amount to withdraw
+            0, // amount
+            0, // shares amount
+            new bytes32[](0), // merkle proof
+            false, // should unqueue
+            false, // should queue withdrawal
+            new bytes[](0) // data
+        );
+
+        // TODO: check the returned amount of LINK
+
+        // Transfer the LINK from the router to the Vault
+        $._link.safeTransfer(receiver, amount);
     }
 
     function getUnderlyingToken() external view returns (address) {

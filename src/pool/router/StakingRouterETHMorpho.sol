@@ -23,8 +23,8 @@ contract StakingRouterETHMorpho is
 
     struct StakingRouterETHMorphoStorage {
         uint256 _totalStakedUnderlying;
-        IMorphoVault _morphoVault;
-        IWETH _weth;
+        IWETH _wETH; // LST token
+        IMorphoVault _morphoVault; // Underlying token
     }
 
     // keccak256(abi.encode(uint256(keccak256("Zeur.storage.StakingRouterETHMorpho")) - 1)) & ~bytes32(uint256(0xff))
@@ -49,7 +49,7 @@ contract StakingRouterETHMorpho is
     function initialize(
         address initialAuthority,
         address morphoVault,
-        address weth
+        address wETH
     ) public initializer {
         __AccessManaged_init(initialAuthority);
         __UUPSUpgradeable_init();
@@ -58,7 +58,7 @@ contract StakingRouterETHMorpho is
             storage $ = _getStakingRouterETHMorphoStorage();
 
         $._morphoVault = IMorphoVault(morphoVault);
-        $._weth = IWETH(weth);
+        $._wETH = IWETH(wETH);
     }
 
     function _authorizeUpgrade(
@@ -71,13 +71,14 @@ contract StakingRouterETHMorpho is
     ) external payable restricted {
         StakingRouterETHMorphoStorage
             storage $ = _getStakingRouterETHMorphoStorage();
+        $._totalStakedUnderlying += amount;
 
         // Wrap ETH into WETH
-        $._weth.deposit{value: amount}();
+        $._wETH.deposit{value: amount}();
 
-        // Deposit WETH into Morpho Vault
+        // Approve and deposit WETH into Morpho Vault
+        $._wETH.approve(address($._morphoVault), amount);
         uint256 shares = $._morphoVault.deposit(amount, receiver);
-        $._totalStakedUnderlying += amount;
 
         // Transfer shares back to Zeur VaultETH contract
         $._morphoVault.transfer(receiver, shares);
@@ -86,15 +87,16 @@ contract StakingRouterETHMorpho is
     function unstake(uint256 amount, address receiver) external restricted {
         StakingRouterETHMorphoStorage
             storage $ = _getStakingRouterETHMorphoStorage();
+        $._totalStakedUnderlying -= amount;
 
         $._morphoVault.transferFrom(msg.sender, address(this), amount);
+        $._morphoVault.approve(address($._morphoVault), amount);
 
         // Withdraw WETH from Morpho Vault
         $._morphoVault.withdraw(amount, receiver, address(this));
 
         // Unwrap WETH into ETH
-        $._weth.withdraw(amount);
-        $._totalStakedUnderlying -= amount;
+        $._wETH.withdraw(amount);
 
         // Transfer ETH to Zeur VaultETH contract
         (bool success, ) = payable(receiver).call{value: amount}("");
@@ -105,7 +107,7 @@ contract StakingRouterETHMorpho is
         StakingRouterETHMorphoStorage
             storage $ = _getStakingRouterETHMorphoStorage();
 
-        return address($._weth);
+        return address($._wETH);
     }
 
     function getStakedToken() external view returns (address) {

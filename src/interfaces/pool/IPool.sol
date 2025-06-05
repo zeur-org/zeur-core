@@ -4,12 +4,15 @@ import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IER
 
 interface IPool {
     error Pool_AssetNotAllowed(address asset);
+    error Pool_AssetAlreadyInitialized(address asset);
     error Pool_InvalidAmount();
     error Pool_CollateralFrozen();
     error Pool_CollateralPaused();
     error Pool_DebtFrozen();
     error Pool_DebtPaused();
     error Pool_SupplyCapExceeded();
+    error Pool_InsufficientAvailableBorrowsValue();
+    error Pool_InsufficientHealthFactor();
 
     enum UserAction {
         Supply,
@@ -61,6 +64,62 @@ interface IPool {
         bool isPaused;
     }
 
+    event Supply(
+        address indexed asset,
+        uint256 amount,
+        address indexed from,
+        address indexed caller
+    );
+
+    event Withdraw(
+        address indexed asset,
+        uint256 amount,
+        address indexed to,
+        address indexed caller
+    );
+
+    event Borrow(
+        address indexed asset,
+        uint256 amount,
+        address indexed to,
+        address indexed caller
+    );
+
+    event Repay(
+        address indexed asset,
+        uint256 amount,
+        address indexed from,
+        address indexed caller
+    );
+
+    event Liquidate(
+        address indexed collateralAsset,
+        address indexed debtAsset,
+        uint256 debtAmount,
+        address from,
+        address liquidator
+    );
+
+    event InitCollateralAsset(
+        address indexed collateralAsset,
+        CollateralConfiguration collateralConfiguration
+    );
+
+    event InitDebtAsset(
+        address indexed debtAsset,
+        DebtConfiguration debtConfiguration
+    );
+
+    event SetCollateralConfiguration(
+        address indexed collateralAsset,
+        CollateralConfiguration collateralConfiguration
+    );
+
+    event SetDebtConfiguration(
+        address indexed debtAsset,
+        DebtConfiguration debtConfiguration
+    );
+
     function supply(
         address asset,
         uint256 amount,
@@ -73,7 +132,12 @@ interface IPool {
 
     function repay(address asset, uint256 amount, address from) external;
 
-    function liquidate(address token, uint256 amount, address from) external;
+    function liquidate(
+        address collateralAsset,
+        address debtAsset,
+        uint256 debtAmount,
+        address from
+    ) external;
 
     function initCollateralAsset(
         address collateralAsset,

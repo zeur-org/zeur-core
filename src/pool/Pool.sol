@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
+import {HEALTH_FACTOR_BASE} from "../helpers/Constants.sol";
 import {IColToken} from "../interfaces/tokenization/IColToken.sol";
 import {IDebtEUR} from "../interfaces/tokenization/IDebtEUR.sol";
 import {IColEUR} from "../interfaces/tokenization/IColEUR.sol";
@@ -124,46 +125,160 @@ contract Pool is
     }
 
     function withdraw(address asset, uint256 amount, address to) external {
-        IERC20(asset).safeTransfer(to, amount);
+        PoolStorage storage $ = _getPoolStorage();
+
+        if ($._collateralAssetList.contains(asset)) {
+            CollateralConfiguration memory configuration = $
+                ._collateralConfigurations[asset];
+            _validateCollateral(configuration, amount, UserAction.Withdraw);
+
+            IColToken colToken = IColToken(configuration.colToken);
+
+            // Burn colToken from msg.sender
+            colToken.burn(msg.sender, amount);
+
+            // Unlock collateral from vault
+            IVault tokenVault = IVault(configuration.tokenVault);
+            if (asset == ETH_ADDRESS) {
+                tokenVault.unlockCollateral(to, amount);
+            } else {}
+
+            // Transfer collateral back to user
+        } else if ($._debtAssetList.contains(asset)) {} else {
+            revert Pool_AssetNotAllowed(asset);
+        }
+
+        // TODO: Check HF of msg.sender after withdraw
+        UserAccountData memory userAccountData = getUserAccountData(msg.sender);
+        if (userAccountData.healthFactor < HEALTH_FACTOR_BASE)
+            // 100%
+            revert Pool_InsufficientHealthFactor();
+
+        emit Withdraw(asset, amount, to, msg.sender);
     }
 
     function borrow(
         address asset,
         uint256 amount,
         address to
-    ) external override {}
+    ) external override {
+        PoolStorage storage $ = _getPoolStorage();
+        if (!$._collateralAssetList.contains(asset))
+            revert Pool_AssetNotAllowed(asset);
+
+        DebtConfiguration memory configuration = $._debtConfigurations[asset];
+        _validateDebt(configuration, asset, amount, UserAction.Borrow);
+
+        // Check availableBorrowsValue of msg.sender
+        // Get value of asset amount to be borrowed
+        uint256 assetValue = ($._oracleManager.getAssetPrice(asset) * amount) /
+            10 ** IERC20Metadata(asset).decimals();
+
+        UserAccountData memory userAccountData = getUserAccountData(msg.sender);
+
+        // Check if availableBorrowsValue is enough
+        if (userAccountData.availableBorrowsValue < assetValue)
+            revert Pool_InsufficientAvailableBorrowsValue();
+
+        // Mint debtEUR to msg.sender
+        IDebtEUR debtEUR = IDebtEUR(configuration.debtToken);
+        debtEUR.mint(msg.sender, amount);
+
+        // Transfer EUR from colEUR to "to" address
+        IERC20(asset).safeTransferFrom(configuration.colToken, to, amount);
+    }
 
     function repay(
         address asset,
         uint256 amount,
         address from
-    ) external override {}
+    ) external override {
+        PoolStorage storage $ = _getPoolStorage();
+        if (!$._debtAssetList.contains(asset))
+            revert Pool_AssetNotAllowed(asset);
+
+        DebtConfiguration memory configuration = $._debtConfigurations[asset];
+        _validateDebt(configuration, asset, amount, UserAction.Repay);
+
+        IERC20 assetToken = IERC20(asset);
+        IDebtEUR debtToken = IDebtEUR(configuration.debtToken);
+
+        // Transfer asset from msg.sender to colToken
+        assetToken.safeTransferFrom(msg.sender, configuration.colToken, amount);
+
+        // Burn the corresponding debtToken of "from" balance
+        debtToken.burn(from, amount);
+
+        emit Repay(asset, amount, from, msg.sender);
+    }
 
     function liquidate(
-        address token,
-        uint256 amount,
+        address collateralAsset,
+        address debtAsset,
+        uint256 debtAmount,
         address from
-    ) external override {}
+    ) external {}
 
     function initCollateralAsset(
         address collateralAsset,
         CollateralConfiguration memory collateralConfiguration
-    ) external override restricted {}
+    ) external override restricted {
+        PoolStorage storage $ = _getPoolStorage();
+        if (
+            $._collateralAssetList.contains(collateralAsset) ||
+            $._debtAssetList.contains(collateralAsset)
+        ) revert Pool_AssetAlreadyInitialized(collateralAsset);
+
+        $._collateralAssetList.add(collateralAsset);
+        $._collateralConfigurations[collateralAsset] = collateralConfiguration;
+
+        emit InitCollateralAsset(collateralAsset, collateralConfiguration);
+    }
 
     function initDebtAsset(
         address debtAsset,
         DebtConfiguration memory debtConfiguration
-    ) external override restricted {}
+    ) external override restricted {
+        PoolStorage storage $ = _getPoolStorage();
+        if (
+            $._debtAssetList.contains(debtAsset) ||
+            $._collateralAssetList.contains(debtAsset)
+        ) revert Pool_AssetAlreadyInitialized(debtAsset);
+
+        $._debtAssetList.add(debtAsset);
+        $._debtConfigurations[debtAsset] = debtConfiguration;
+
+        emit InitDebtAsset(debtAsset, debtConfiguration);
+    }
 
     function setCollateralConfiguration(
         address collateralAsset,
         CollateralConfiguration memory collateralConfiguration
-    ) external override restricted {}
+    ) external override restricted {
+        PoolStorage storage $ = _getPoolStorage();
+        if (!$._collateralAssetList.contains(collateralAsset))
+            revert Pool_AssetNotAllowed(collateralAsset);
+
+        $._collateralConfigurations[collateralAsset] = collateralConfiguration;
+
+        emit SetCollateralConfiguration(
+            collateralAsset,
+            collateralConfiguration
+        );
+    }
 
     function setDebtConfiguration(
         address debtAsset,
         DebtConfiguration memory debtConfiguration
-    ) external override restricted {}
+    ) external override restricted {
+        PoolStorage storage $ = _getPoolStorage();
+        if (!$._debtAssetList.contains(debtAsset))
+            revert Pool_AssetNotAllowed(debtAsset);
+
+        $._debtConfigurations[debtAsset] = debtConfiguration;
+
+        emit SetDebtConfiguration(debtAsset, debtConfiguration);
+    }
 
     function getCollateralAssetList()
         external
@@ -201,7 +316,7 @@ contract Pool is
 
     function getUserAccountData(
         address user
-    ) external view override returns (UserAccountData memory userAccountData) {
+    ) public view override returns (UserAccountData memory userAccountData) {
         PoolStorage storage $ = _getPoolStorage();
 
         address[] memory collateralAssets = $._collateralAssetList.values();

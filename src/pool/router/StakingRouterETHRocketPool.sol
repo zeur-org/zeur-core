@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {ETH_ADDRESS, CALC_BASE} from "../../helpers/Constants.sol";
+import {ETH_ADDRESS, ETHER_TO_WEI} from "../../helpers/Constants.sol";
 import {IRETH} from "../../interfaces/lst/rocket-pool/IRETH.sol";
 import {IRocketDepositPool} from "../../interfaces/lst/rocket-pool/IRocketDepositPool.sol";
 import {IRocketDAOProtocolSettingsDeposit} from "../../interfaces/lst/rocket-pool/IRocketDAOProtocolSettingsDeposit.sol";
@@ -79,7 +79,7 @@ contract StakingRouterETHRocketPool is
             storage $ = _getStakingRouterETHRocketPoolStorage();
 
         uint256 fee = (amount * $._protocolSettings.getDepositFee()) /
-            CALC_BASE;
+            ETHER_TO_WEI;
         uint256 ethDepositNet = amount - fee;
         uint256 rEthAmount = $._rETH.getRethValue(ethDepositNet);
 

@@ -72,8 +72,8 @@ contract StakingRouterETHRocketPool is
     ) internal override restricted {}
 
     function stake(
-        uint256 amount,
-        address receiver
+        address from,
+        uint256 amount
     ) external payable nonReentrant restricted {
         StakingRouterETHRocketPoolStorage
             storage $ = _getStakingRouterETHRocketPoolStorage();
@@ -87,14 +87,14 @@ contract StakingRouterETHRocketPool is
         $._depositPool.deposit{value: ethDepositNet}();
 
         // Mint rETH to the receiver
-        IERC20($._rETH).safeTransfer(receiver, rEthAmount);
+        IERC20($._rETH).safeTransfer(from, rEthAmount);
 
         $._totalStakedUnderlying += amount;
     }
 
     function unstake(
-        uint256 amount,
-        address receiver
+        address to,
+        uint256 amount
     ) external nonReentrant restricted {
         StakingRouterETHRocketPoolStorage
             storage $ = _getStakingRouterETHRocketPoolStorage();
@@ -104,7 +104,7 @@ contract StakingRouterETHRocketPool is
 
         // Transfer back ETH to final receiver
         uint256 ethAmount = $._rETH.getEthValue(amount);
-        (bool success, ) = payable(receiver).call{value: ethAmount}("");
+        (bool success, ) = payable(to).call{value: ethAmount}("");
         if (!success) revert StakingRouter_FailedToTransfer();
 
         $._totalStakedUnderlying -= amount;
@@ -126,5 +126,12 @@ contract StakingRouterETHRocketPool is
             storage $ = _getStakingRouterETHRocketPoolStorage();
 
         return $._totalStakedUnderlying;
+    }
+
+    function getExchangeRate() external view override returns (uint256) {
+        StakingRouterETHRocketPoolStorage
+            storage $ = _getStakingRouterETHRocketPoolStorage();
+
+        return $._rETH.getExchangeRate();
     }
 }

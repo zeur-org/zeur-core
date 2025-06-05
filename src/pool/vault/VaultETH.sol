@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
+import {ETHER_TO_WEI} from "../../helpers/Constants.sol";
 import {IVaultETH} from "../../interfaces/vault/IVaultETH.sol";
+import {IStakingRouter} from "../../interfaces/router/IStakingRouter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
@@ -21,6 +23,7 @@ contract VaultETH is
     using EnumerableSet for EnumerableSet.AddressSet;
 
     struct VaultETHStorage {
+        uint256 _totalETH;
         address _currentStakingRouter;
         address _currentUnstakingRouter;
         EnumerableSet.AddressSet _stakingRouters;
@@ -108,9 +111,39 @@ contract VaultETH is
         return $._stakingRouters.values();
     }
 
-    function lockCollateral(address from, uint256 amount) external payable {}
+    function lockCollateral(address from, uint256 amount) external payable {
+        if (msg.value != amount) revert Vault_InvalidAmount();
 
-    function unlockCollateral(address to, uint256 amount) external {}
+        VaultETHStorage storage $ = _getVaultETHStorage();
+        $._totalETH += amount;
+
+        // Stake ETH through StakingRouter, transfer the LST token back to the Vault
+        IStakingRouter stakingRouter = IStakingRouter($._currentStakingRouter);
+        stakingRouter.stake{value: amount}(address(this), amount);
+    }
+
+    function unlockCollateral(address to, uint256 amount) external {
+        VaultETHStorage storage $ = _getVaultETHStorage();
+        uint256 cachedTotalETH = $._totalETH;
+
+        if (cachedTotalETH < amount) revert Vault_InsufficientCollateral();
+        $._totalETH = cachedTotalETH - amount;
+
+        IStakingRouter unstakingRouter = IStakingRouter(
+            $._currentUnstakingRouter
+        );
+
+        uint256 amountToUnstake = (amount * ETHER_TO_WEI) /
+            unstakingRouter.getExchangeRate();
+
+        // Approve the StakingRouter to use LST token
+        // Unstake using the user's address as "to"
+        IERC20(unstakingRouter.getStakedToken()).approve(
+            address(unstakingRouter),
+            amountToUnstake
+        );
+        unstakingRouter.unstake(to, amountToUnstake);
+    }
 
     function rebalance() external {}
 }

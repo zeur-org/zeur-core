@@ -67,21 +67,18 @@ contract StakingRouterETHLido is
         address newImplementation
     ) internal override restricted {}
 
-    function stake(
-        uint256 amount,
-        address receiver
-    ) external payable restricted {
+    function stake(address from, uint256 amount) external payable restricted {
         StakingRouterETHLidoStorage
             storage $ = _getStakingRouterETHLidoStorage();
 
-        uint256 stETHAmount = $._stETH.submit{value: amount}(receiver);
+        uint256 stETHAmount = $._stETH.submit{value: amount}(from);
 
-        IERC20(address($._stETH)).safeTransfer(receiver, stETHAmount);
+        IERC20(address($._stETH)).safeTransfer(from, stETHAmount);
 
         $._totalStakedUnderlying += amount;
     }
 
-    function unstake(uint256 amount, address receiver) external restricted {
+    function unstake(address to, uint256 amount) external restricted {
         StakingRouterETHLidoStorage
             storage $ = _getStakingRouterETHLidoStorage();
 

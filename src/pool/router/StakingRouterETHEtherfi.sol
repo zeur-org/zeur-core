@@ -57,10 +57,7 @@ contract StakingRouterETHEtherfi is
     // => approve(lstPool, amount)
     // => lstPool.deposit(amount)
     // => lst.transfer(vault, lstAmount)
-    function stake(
-        uint256 amount,
-        address receiver
-    ) external payable restricted {
+    function stake(address from, uint256 amount) external payable restricted {
         uint256 amount = msg.value;
 
         if (amount == 0) revert StakingRouter_InvalidAmount();
@@ -68,7 +65,7 @@ contract StakingRouterETHEtherfi is
             storage $ = _getStakingRouterETHEtherfiStorage();
     }
 
-    function unstake(uint256 amount, address receiver) external restricted {}
+    function unstake(address to, uint256 amount) external restricted {}
 
     function getUnderlyingToken() external pure returns (address) {
         return ETH_ADDRESS;
@@ -87,4 +84,6 @@ contract StakingRouterETHEtherfi is
 
         return $._totalStakedUnderlying;
     }
+
+    function getExchangeRate() external view override returns (uint256) {}
 }

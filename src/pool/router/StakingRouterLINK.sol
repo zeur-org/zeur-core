@@ -66,7 +66,7 @@ contract StakingRouterLINK is
         address newImplementation
     ) internal override restricted {}
 
-    function stake(uint256 amount, address receiver) external payable {
+    function stake(address from, uint256 amount) external payable restricted {
         StakingRouterLINKStorage storage $ = _getStakingRouterLINKStorage();
 
         // Update the total staked underlying
@@ -85,7 +85,7 @@ contract StakingRouterLINK is
         // TODO: get the return stLINK amount and transfer back to VaultLINK
     }
 
-    function unstake(uint256 amount, address receiver) external {
+    function unstake(address to, uint256 amount) external restricted {
         StakingRouterLINKStorage storage $ = _getStakingRouterLINKStorage();
         $._totalStakedUnderlying -= amount;
 
@@ -106,7 +106,7 @@ contract StakingRouterLINK is
         // TODO: check the returned amount of LINK
 
         // Transfer the LINK from the router to the Vault
-        $._link.safeTransfer(receiver, amount);
+        $._link.safeTransfer(to, amount);
     }
 
     function getUnderlyingToken() external view returns (address) {

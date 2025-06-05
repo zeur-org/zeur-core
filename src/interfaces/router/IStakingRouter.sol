@@ -9,14 +9,14 @@ interface IStakingRouter {
     error StakingRouter_InvalidStakedToken();
 
     /// @notice Stakes a specified amount of the underlying token
+    /// @param from The address to stake from
     /// @param amount The amount to stake
-    /// @param receiver The address to receive the staked tokens
-    function stake(uint256 amount, address receiver) external payable;
+    function stake(address from, uint256 amount) external payable;
 
     /// @notice Unstakes a specified amount of the staked token
+    /// @param to The address to receive the tokens
     /// @param amount The amount to unstake
-    /// @param receiver The address to receive the tokens
-    function unstake(uint256 amount, address receiver) external;
+    function unstake(address to, uint256 amount) external;
 
     /// @notice Returns the underlying token accepted by the strategy (e.g., ETH, LINK)
     function getUnderlyingToken() external view returns (address);
@@ -26,4 +26,19 @@ interface IStakingRouter {
 
     /// @notice Returns the total amount of underlying tokens managed by the strategy
     function getTotalStakedUnderlying() external view returns (uint256);
+
+    /// @notice Returns the exchange rate of the staked token to the underlying token
+    function getExchangeRate() external view returns (uint256);
+
+    // /// @notice Returns the available deposit amount of the underlying token
+    // function getAvailableDepositAmount() external view returns (uint256);
+
+    // /// @notice Returns the available withdraw amount of the staked token
+    // function getAvailableWithdrawAmount() external view returns (uint256);
+
+    // /// @notice Returns the queue time for deposit if exist
+    // function getQueueTimeForDeposit() external view returns (uint256);
+
+    // /// @notice Returns the queue time for withdrawal if exist
+    // function getQueueTimeForWithdrawal() external view returns (uint256);
 }

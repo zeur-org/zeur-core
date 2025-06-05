@@ -65,10 +65,7 @@ contract StakingRouterETHMorpho is
         address newImplementation
     ) internal override restricted {}
 
-    function stake(
-        uint256 amount,
-        address receiver
-    ) external payable restricted {
+    function stake(address from, uint256 amount) external payable restricted {
         StakingRouterETHMorphoStorage
             storage $ = _getStakingRouterETHMorphoStorage();
         $._totalStakedUnderlying += amount;
@@ -78,13 +75,13 @@ contract StakingRouterETHMorpho is
 
         // Approve and deposit WETH into Morpho Vault
         $._wETH.approve(address($._morphoVault), amount);
-        uint256 shares = $._morphoVault.deposit(amount, receiver);
+        uint256 shares = $._morphoVault.deposit(amount, from);
 
         // Transfer shares back to Zeur VaultETH contract
-        $._morphoVault.transfer(receiver, shares);
+        $._morphoVault.transfer(from, shares);
     }
 
-    function unstake(uint256 amount, address receiver) external restricted {
+    function unstake(address to, uint256 amount) external restricted {
         StakingRouterETHMorphoStorage
             storage $ = _getStakingRouterETHMorphoStorage();
         $._totalStakedUnderlying -= amount;
@@ -93,13 +90,13 @@ contract StakingRouterETHMorpho is
         $._morphoVault.approve(address($._morphoVault), amount);
 
         // Withdraw WETH from Morpho Vault
-        $._morphoVault.withdraw(amount, receiver, address(this));
+        $._morphoVault.withdraw(amount, to, address(this));
 
         // Unwrap WETH into ETH
         $._wETH.withdraw(amount);
 
         // Transfer ETH to Zeur VaultETH contract
-        (bool success, ) = payable(receiver).call{value: amount}("");
+        (bool success, ) = payable(to).call{value: amount}("");
         if (!success) revert StakingRouter_FailedToTransfer();
     }
 

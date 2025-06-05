@@ -89,6 +89,7 @@ contract Pool is
 
             if (asset == ETH_ADDRESS) {
                 // Lock ETH into the vault
+                if (msg.value != amount) revert Pool_InvalidAmount();
                 tokenVault.lockCollateral{value: amount}(from, amount);
 
                 // Mint colETH to the user
@@ -151,7 +152,6 @@ contract Pool is
         // TODO: Check HF of msg.sender after withdraw
         UserAccountData memory userAccountData = getUserAccountData(msg.sender);
         if (userAccountData.healthFactor < HEALTH_FACTOR_BASE)
-            // 100%
             revert Pool_InsufficientHealthFactor();
 
         emit Withdraw(asset, amount, to, msg.sender);

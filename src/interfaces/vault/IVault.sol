@@ -5,6 +5,8 @@ pragma solidity ^0.8.30;
 /// @notice Interface for the ETH vault
 /// @dev This interface defines the functions for the ETH vault
 interface IVault {
+    error Vault_InsufficientCollateral();
+    error Vault_InvalidAmount();
     error Vault_InvalidStakingRouter(address router);
     error Vault_StakingRouterAlreadyAdded(address router);
     error Vault_StakingRouterAlreadyRemoved(address router);

@@ -114,13 +114,6 @@ contract StakingRouterETHRocketPool is
         return ETH_ADDRESS;
     }
 
-    function getStakedToken() external view returns (address) {
-        StakingRouterETHRocketPoolStorage
-            storage $ = _getStakingRouterETHRocketPoolStorage();
-
-        return address($._rETH);
-    }
-
     function getTotalStakedUnderlying() external view returns (uint256) {
         StakingRouterETHRocketPoolStorage
             storage $ = _getStakingRouterETHRocketPoolStorage();
@@ -128,10 +121,30 @@ contract StakingRouterETHRocketPool is
         return $._totalStakedUnderlying;
     }
 
+    function getStakedToken() external view returns (address) {
+        StakingRouterETHRocketPoolStorage
+            storage $ = _getStakingRouterETHRocketPoolStorage();
+
+        return address($._rETH);
+    }
+
     function getExchangeRate() external view override returns (uint256) {
         StakingRouterETHRocketPoolStorage
             storage $ = _getStakingRouterETHRocketPoolStorage();
 
         return $._rETH.getExchangeRate();
+    }
+
+    function getStakedTokenAndExchangeRate()
+        external
+        view
+        returns (address, uint256)
+    {
+        StakingRouterETHRocketPoolStorage
+            storage $ = _getStakingRouterETHRocketPoolStorage();
+
+        IRETH rETH = $._rETH;
+
+        return (address(rETH), rETH.getExchangeRate());
     }
 }

@@ -124,4 +124,19 @@ contract StakingRouterETHLido is
 
         return $._totalStakedUnderlying;
     }
+
+    function getStakedTokenAndExchangeRate()
+        external
+        view
+        returns (address, uint256)
+    {
+        StakingRouterETHLidoStorage
+            storage $ = _getStakingRouterETHLidoStorage();
+
+        return (address($._stETH), 1e18); // 1 ETH = 1 stETH
+    }
+
+    function getExchangeRate() external pure returns (uint256) {
+        return 1e18; // 1 ETH = 1 stETH
+    }
 }

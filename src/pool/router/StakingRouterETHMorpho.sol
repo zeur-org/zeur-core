@@ -120,4 +120,17 @@ contract StakingRouterETHMorpho is
 
         return $._totalStakedUnderlying;
     }
+
+    function getExchangeRate() external view override returns (uint256) {}
+
+    function getStakedTokenAndExchangeRate()
+        external
+        view
+        returns (address, uint256)
+    {
+        StakingRouterETHMorphoStorage
+            storage $ = _getStakingRouterETHMorphoStorage();
+
+        return (address($._morphoVault), 1e18); // TODO: exchange rate from ERC4626
+    }
 }

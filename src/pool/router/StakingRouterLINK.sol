@@ -114,13 +114,27 @@ contract StakingRouterLINK is
         return address($._link);
     }
 
+    function getTotalStakedUnderlying() external view returns (uint256) {
+        StakingRouterLINKStorage storage $ = _getStakingRouterLINKStorage();
+        return $._totalStakedUnderlying;
+    }
+
     function getStakedToken() external view returns (address) {
         StakingRouterLINKStorage storage $ = _getStakingRouterLINKStorage();
         return address($._stLINK);
     }
 
-    function getTotalStakedUnderlying() external view returns (uint256) {
+    function getStakedTokenAndExchangeRate()
+        external
+        view
+        returns (address, uint256)
+    {
         StakingRouterLINKStorage storage $ = _getStakingRouterLINKStorage();
-        return $._totalStakedUnderlying;
+
+        return (address($._stLINK), 1e18); // 1 LINK = 1 stLINK
+    }
+
+    function getExchangeRate() external pure returns (uint256) {
+        return 1e18; // 1 LINK = 1 stLINK
     }
 }

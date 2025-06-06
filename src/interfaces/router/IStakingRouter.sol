@@ -30,6 +30,12 @@ interface IStakingRouter {
     /// @notice Returns the exchange rate of the staked token to the underlying token
     function getExchangeRate() external view returns (uint256);
 
+    /// @notice Returns the staked token and exchange rate
+    function getStakedTokenAndExchangeRate()
+        external
+        view
+        returns (address, uint256);
+
     // /// @notice Returns the available deposit amount of the underlying token
     // function getAvailableDepositAmount() external view returns (uint256);
 

@@ -119,7 +119,7 @@ contract VaultETH is
 
         // Stake ETH through StakingRouter, transfer the LST token back to the Vault
         IStakingRouter stakingRouter = IStakingRouter($._currentStakingRouter);
-        stakingRouter.stake{value: amount}(address(this), amount);
+        stakingRouter.stake{value: amount}(address(this), amount); // stake ETH on behalf of the Vault
     }
 
     function unlockCollateral(address to, uint256 amount) external {
@@ -133,16 +133,15 @@ contract VaultETH is
             $._currentUnstakingRouter
         );
 
-        uint256 amountToUnstake = (amount * ETHER_TO_WEI) /
-            unstakingRouter.getExchangeRate();
+        (address lstToken, uint256 exchangeRate) = unstakingRouter
+            .getStakedTokenAndExchangeRate();
+
+        uint256 lstAmount = (amount * ETHER_TO_WEI) / exchangeRate;
 
         // Approve the StakingRouter to use LST token
         // Unstake using the user's address as "to"
-        IERC20(unstakingRouter.getStakedToken()).approve(
-            address(unstakingRouter),
-            amountToUnstake
-        );
-        unstakingRouter.unstake(to, amountToUnstake);
+        IERC20(lstToken).approve(address(unstakingRouter), lstAmount);
+        unstakingRouter.unstake(to, lstAmount);
     }
 
     function rebalance() external {}

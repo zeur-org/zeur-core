@@ -71,13 +71,6 @@ contract StakingRouterETHEtherfi is
         return ETH_ADDRESS;
     }
 
-    function getStakedToken() external view returns (address) {
-        StakingRouterETHEtherfiStorage
-            storage $ = _getStakingRouterETHEtherfiStorage();
-
-        return address($._eETH);
-    }
-
     function getTotalStakedUnderlying() external view returns (uint256) {
         StakingRouterETHEtherfiStorage
             storage $ = _getStakingRouterETHEtherfiStorage();
@@ -85,5 +78,25 @@ contract StakingRouterETHEtherfi is
         return $._totalStakedUnderlying;
     }
 
-    function getExchangeRate() external view override returns (uint256) {}
+    function getStakedToken() external view returns (address) {
+        StakingRouterETHEtherfiStorage
+            storage $ = _getStakingRouterETHEtherfiStorage();
+
+        return address($._eETH);
+    }
+
+    function getStakedTokenAndExchangeRate()
+        external
+        view
+        returns (address, uint256)
+    {
+        StakingRouterETHEtherfiStorage
+            storage $ = _getStakingRouterETHEtherfiStorage();
+
+        return (address($._eETH), 1e18); // 1 ETH = 1 eETH
+    }
+
+    function getExchangeRate() external pure returns (uint256) {
+        return 1e18; // 1 ETH = 1 eETH
+    }
 }

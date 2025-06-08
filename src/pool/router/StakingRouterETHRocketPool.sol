@@ -21,6 +21,7 @@ contract StakingRouterETHRocketPool is
     IStakingRouter
 {
     using SafeERC20 for IERC20;
+    using SafeERC20 for IRETH;
 
     struct StakingRouterETHRocketPoolStorage {
         uint256 _totalStakedUnderlying;
@@ -87,7 +88,7 @@ contract StakingRouterETHRocketPool is
         $._depositPool.deposit{value: ethDepositNet}();
 
         // Mint rETH to the receiver
-        IERC20($._rETH).safeTransfer(from, rEthAmount);
+        $._rETH.safeTransfer(from, rEthAmount);
 
         $._totalStakedUnderlying += amount;
     }
@@ -99,7 +100,7 @@ contract StakingRouterETHRocketPool is
         StakingRouterETHRocketPoolStorage
             storage $ = _getStakingRouterETHRocketPoolStorage();
 
-        $._rETH.transferFrom(msg.sender, address(this), amount);
+        $._rETH.safeTransferFrom(msg.sender, address(this), amount);
         $._rETH.burn(amount);
 
         // Transfer back ETH to final receiver

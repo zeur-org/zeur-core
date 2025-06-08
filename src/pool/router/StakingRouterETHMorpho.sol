@@ -20,6 +20,7 @@ contract StakingRouterETHMorpho is
     IStakingRouter
 {
     using SafeERC20 for IERC20;
+    using SafeERC20 for IMorphoVault;
 
     struct StakingRouterETHMorphoStorage {
         uint256 _totalStakedUnderlying;
@@ -78,7 +79,7 @@ contract StakingRouterETHMorpho is
         uint256 shares = $._morphoVault.deposit(amount, from);
 
         // Transfer shares back to Zeur VaultETH contract
-        $._morphoVault.transfer(from, shares);
+        $._morphoVault.safeTransfer(from, shares);
     }
 
     function unstake(address to, uint256 amount) external restricted {
@@ -86,8 +87,8 @@ contract StakingRouterETHMorpho is
             storage $ = _getStakingRouterETHMorphoStorage();
         $._totalStakedUnderlying -= amount;
 
-        $._morphoVault.transferFrom(msg.sender, address(this), amount);
-        $._morphoVault.approve(address($._morphoVault), amount);
+        $._morphoVault.safeTransferFrom(msg.sender, address(this), amount);
+        $._morphoVault.forceApprove(address($._morphoVault), amount);
 
         // Withdraw WETH from Morpho Vault
         $._morphoVault.withdraw(amount, to, address(this));

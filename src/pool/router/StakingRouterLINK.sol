@@ -73,10 +73,10 @@ contract StakingRouterLINK is
         $._totalStakedUnderlying += amount;
 
         // Transfer LINK from the Vault to the router
-        $._link.transferFrom(msg.sender, address(this), amount);
+        $._link.safeTransferFrom(msg.sender, address(this), amount);
 
         // Approve the stake.link priority pool to spend the LINK
-        $._link.approve(address($._linkPriorityPool), amount);
+        $._link.forceApprove(address($._linkPriorityPool), amount);
 
         // Stake the LINK in the priority pool
         bytes[] memory data = new bytes[](0); // TODO: Add data
@@ -90,7 +90,7 @@ contract StakingRouterLINK is
         $._totalStakedUnderlying -= amount;
 
         // Transfer stLINK from the router to the Vault
-        $._stLINK.transferFrom(msg.sender, address(this), amount);
+        $._stLINK.safeTransferFrom(msg.sender, address(this), amount);
 
         // TODO: Withdraw the LINK from the priority pool
         $._linkPriorityPool.withdraw(

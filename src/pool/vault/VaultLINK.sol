@@ -2,6 +2,7 @@
 pragma solidity ^0.8.30;
 
 import {IVaultLINK} from "../../interfaces/vault/IVaultLINK.sol";
+import {IStakingRouter} from "../../interfaces/router/IStakingRouter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
@@ -21,8 +22,11 @@ contract VaultLINK is
     using EnumerableSet for EnumerableSet.AddressSet;
 
     struct VaultLINKStorage {
-        address _currentStakingRouter;
-        address _currentUnstakingRouter;
+        uint256 _totalLINK;
+        IERC20 _link;
+        IERC20 _stLINK;
+        IStakingRouter _currentStakingRouter;
+        IStakingRouter _currentUnstakingRouter;
         EnumerableSet.AddressSet _stakingRouters;
     }
 
@@ -79,7 +83,7 @@ contract VaultLINK is
         if (!$._stakingRouters.contains(router))
             revert Vault_InvalidStakingRouter(router);
 
-        $._currentStakingRouter = router;
+        $._currentStakingRouter = IStakingRouter(router);
         emit CurrentStakingRouterUpdated(router);
     }
 
@@ -89,18 +93,18 @@ contract VaultLINK is
         if (!$._stakingRouters.contains(router))
             revert Vault_InvalidStakingRouter(router);
 
-        $._currentUnstakingRouter = router;
+        $._currentUnstakingRouter = IStakingRouter(router);
         emit CurrentUnstakingRouterUpdated(router);
     }
 
     function getCurrentStakingRouter() external view returns (address) {
         VaultLINKStorage storage $ = _getVaultLINKStorage();
-        return $._currentStakingRouter;
+        return address($._currentStakingRouter);
     }
 
     function getCurrentUnstakingRouter() external view returns (address) {
         VaultLINKStorage storage $ = _getVaultLINKStorage();
-        return $._currentUnstakingRouter;
+        return address($._currentUnstakingRouter);
     }
 
     function getStakingRouters() external view returns (address[] memory) {
@@ -108,9 +112,24 @@ contract VaultLINK is
         return $._stakingRouters.values();
     }
 
-    function lockCollateral(address from, uint256 amount) external payable {}
+    function lockCollateral(address from, uint256 amount) external payable {
+        VaultLINKStorage storage $ = _getVaultLINKStorage();
 
-    function unlockCollateral(address to, uint256 amount) external {}
+        IStakingRouter stakingRouter = $._currentStakingRouter;
+        IERC20 link = $._link;
+        link.forceApprove(address(stakingRouter), amount);
+        stakingRouter.stake(from, amount);
+    }
+
+    function unlockCollateral(address to, uint256 amount) external {
+        VaultLINKStorage storage $ = _getVaultLINKStorage();
+
+        IStakingRouter unstakingRouter = $._currentUnstakingRouter;
+        IERC20 link = $._link;
+        IERC20 stLINK = $._stLINK;
+        stLINK.forceApprove(address(unstakingRouter), amount);
+        unstakingRouter.unstake(to, amount);
+    }
 
     function rebalance() external {}
 }

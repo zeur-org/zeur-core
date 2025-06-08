@@ -85,7 +85,7 @@ contract StakingRouterETHLido is
         IERC20 stETH = IERC20(address($._stETH));
 
         stETH.safeTransferFrom(msg.sender, address(this), amount);
-        stETH.approve(address($._withdrawalQueueERC721), amount);
+        stETH.forceApprove(address($._withdrawalQueueERC721), amount);
 
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = amount;

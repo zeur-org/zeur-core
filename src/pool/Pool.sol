@@ -72,7 +72,7 @@ contract Pool is
         address asset,
         uint256 amount,
         address from
-    ) external payable {
+    ) external payable nonReentrant {
         PoolStorage storage $ = _getPoolStorage();
 
         IERC20 assetToken = IERC20(asset);
@@ -114,7 +114,7 @@ contract Pool is
             _validateDebt(configuration, asset, amount, UserAction.Supply);
 
             assetToken.safeTransferFrom(from, address(this), amount);
-            assetToken.approve(configuration.colToken, amount);
+            assetToken.forceApprove(configuration.colToken, amount);
 
             // Deposit EUR to ERC4626 colEUR => mint directly shares to from address
             IColEUR colEUR = IColEUR(configuration.colToken);
@@ -124,7 +124,11 @@ contract Pool is
         }
     }
 
-    function withdraw(address asset, uint256 amount, address to) external {
+    function withdraw(
+        address asset,
+        uint256 amount,
+        address to
+    ) external nonReentrant {
         PoolStorage storage $ = _getPoolStorage();
 
         if ($._collateralAssetList.contains(asset)) {
@@ -149,7 +153,10 @@ contract Pool is
         }
 
         // TODO: Check HF of msg.sender after withdraw
-        UserAccountData memory userAccountData = getUserAccountData(msg.sender);
+        UserAccountData memory userAccountData = _getUserAccountData(
+            msg.sender,
+            $
+        );
         if (userAccountData.healthFactor < HEALTH_FACTOR_BASE)
             revert Pool_InsufficientHealthFactor();
 
@@ -160,9 +167,9 @@ contract Pool is
         address asset,
         uint256 amount,
         address to
-    ) external override {
+    ) external override nonReentrant {
         PoolStorage storage $ = _getPoolStorage();
-        if (!$._collateralAssetList.contains(asset))
+        if (!$._debtAssetList.contains(asset))
             revert Pool_AssetNotAllowed(asset);
 
         DebtConfiguration memory configuration = $._debtConfigurations[asset];
@@ -173,7 +180,10 @@ contract Pool is
         uint256 assetValue = ($._oracleManager.getAssetPrice(asset) * amount) /
             10 ** IERC20Metadata(asset).decimals();
 
-        UserAccountData memory userAccountData = getUserAccountData(msg.sender);
+        UserAccountData memory userAccountData = _getUserAccountData(
+            msg.sender,
+            $
+        );
 
         // Check if availableBorrowsValue is enough
         if (userAccountData.availableBorrowsValue < assetValue)
@@ -191,7 +201,7 @@ contract Pool is
         address asset,
         uint256 amount,
         address from
-    ) external override {
+    ) external override nonReentrant {
         PoolStorage storage $ = _getPoolStorage();
         if (!$._debtAssetList.contains(asset))
             revert Pool_AssetNotAllowed(asset);
@@ -216,7 +226,12 @@ contract Pool is
         address debtAsset,
         uint256 debtAmount,
         address from
-    ) external {}
+    ) external nonReentrant {
+        // Calculate health factor
+        // Verify liquidation conditions
+        // Execute liquidation with proper incentives
+        // Update user positions
+    }
 
     function initCollateralAsset(
         address collateralAsset,
@@ -315,65 +330,63 @@ contract Pool is
 
     function getUserAccountData(
         address user
-    ) public view override returns (UserAccountData memory userAccountData) {
+    ) external view override returns (UserAccountData memory userAccountData) {
         PoolStorage storage $ = _getPoolStorage();
+        userAccountData = _getUserAccountData(user, $);
+    }
 
-        address[] memory collateralAssets = $._collateralAssetList.values();
-        address[] memory debtAssets = $._debtAssetList.values();
+    function _getUserAccountData(
+        address user,
+        PoolStorage storage $
+    ) private view returns (UserAccountData memory userAccountData) {
+        UserCalculationData memory cache;
 
-        uint256 collateralLength = collateralAssets.length;
-        uint256 debtLength = debtAssets.length;
-        UserCalculationData memory calculationData;
+        cache.oracleManager = $._oracleManager;
+        cache.collateralAssets = $._collateralAssetList.values();
+        cache.debtAssets = $._debtAssetList.values();
+        cache.collateralLength = uint16(cache.collateralAssets.length);
+        cache.debtLength = uint16(cache.debtAssets.length);
 
-        for (uint256 i; i < collateralLength; i++) {
-            calculationData.underlyingToken = collateralAssets[i];
+        // Loop through all user's collaterals to calculate total collateral value and total borrowable value (based on ltv)
+        for (uint256 i; i < cache.collateralLength; i++) {
+            cache.cacheAsset = cache.collateralAssets[i];
 
-            calculationData.tokenizedToken = IERC20Metadata(
-                $
-                    ._collateralConfigurations[calculationData.underlyingToken]
-                    .colToken
+            cache.cacheTokenizedAsset = IERC20Metadata(
+                $._collateralConfigurations[cache.cacheAsset].colToken
             );
 
             // Calculate collateral value of the individual token in base currency (USD in 8 decimals, following Chainlink)
-            calculationData.collateralValue =
-                (calculationData.tokenizedToken.balanceOf(user) *
-                    $._oracleManager.getAssetPrice(
-                        calculationData.underlyingToken
-                    )) /
-                10 ** calculationData.tokenizedToken.decimals();
+            cache.collateralValue =
+                (cache.cacheTokenizedAsset.balanceOf(user) *
+                    cache.oracleManager.getAssetPrice(cache.cacheAsset)) /
+                10 ** cache.cacheTokenizedAsset.decimals();
 
             // Calculate borrowable value in base currency (USD in 8 decimals, following Chainlink)
-            calculationData.totalBorrowableValue +=
-                (calculationData.collateralValue *
-                    $
-                        ._collateralConfigurations[
-                            calculationData.underlyingToken
-                        ]
-                        .ltv) /
+            cache.totalBorrowableValue +=
+                (cache.collateralValue *
+                    $._collateralConfigurations[cache.cacheAsset].ltv) /
                 10000;
 
             // Calculate collateral value in base currency (USD in 8 decimals, following Chainlink)
-            userAccountData.totalCollateralValue += calculationData
-                .collateralValue;
+            userAccountData.totalCollateralValue += cache.collateralValue;
         }
 
-        for (uint256 i; i < debtLength; i++) {
-            calculationData.underlyingToken = debtAssets[i];
-            calculationData.tokenizedToken = IERC20Metadata(
-                $._debtConfigurations[calculationData.underlyingToken].debtToken
+        // Loop through all user's debts to calculate total debt value
+        for (uint256 i; i < cache.debtLength; i++) {
+            cache.cacheAsset = cache.debtAssets[i];
+            cache.cacheTokenizedAsset = IERC20Metadata(
+                $._debtConfigurations[cache.cacheAsset].debtToken
             );
 
             // Calculate debt value in base currency (USD in 8 decimals, following Chainlink)
             userAccountData.totalDebtValue +=
-                (calculationData.tokenizedToken.balanceOf(user) *
-                    $._oracleManager.getAssetPrice(
-                        calculationData.underlyingToken
-                    )) /
-                10 ** calculationData.tokenizedToken.decimals();
+                (cache.cacheTokenizedAsset.balanceOf(user) *
+                    cache.oracleManager.getAssetPrice(cache.cacheAsset)) /
+                10 ** cache.cacheTokenizedAsset.decimals();
         }
 
         userAccountData.availableBorrowsValue =
-            calculationData.totalBorrowableValue -
+            cache.totalBorrowableValue -
             userAccountData.totalDebtValue;
 
         // TODO: Calculate current liquidation threshold, ltv, healthFactor

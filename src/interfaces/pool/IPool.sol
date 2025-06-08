@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {IChainlinkOracleManager} from "../../interfaces/chainlink/IChainlinkOracleManager.sol";
 
 interface IPool {
     error Pool_AssetNotAllowed(address asset);
@@ -32,10 +33,14 @@ interface IPool {
     }
 
     struct UserCalculationData {
-        address underlyingToken;
-        IERC20Metadata tokenizedToken; // colToken or debtToken
+        address[] collateralAssets;
+        address[] debtAssets;
+        uint16 collateralLength; // length of collateralAssets
+        uint16 debtLength; // length of debtAssets
+        address cacheAsset; // underlying asset, used for caching the current asset in a loop
+        IERC20Metadata cacheTokenizedAsset; // colToken or debtToken, used for caching the current tokenized asset in a loop
+        IChainlinkOracleManager oracleManager;
         uint256 collateralValue;
-        uint256 collateralLtv;
         uint256 totalBorrowableValue;
     }
 

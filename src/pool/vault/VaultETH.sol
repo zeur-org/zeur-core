@@ -24,8 +24,8 @@ contract VaultETH is
 
     struct VaultETHStorage {
         uint256 _totalETH;
-        address _currentStakingRouter;
-        address _currentUnstakingRouter;
+        IStakingRouter _currentStakingRouter;
+        IStakingRouter _currentUnstakingRouter;
         EnumerableSet.AddressSet _stakingRouters;
     }
 
@@ -82,7 +82,7 @@ contract VaultETH is
         if (!$._stakingRouters.contains(router))
             revert Vault_InvalidStakingRouter(router);
 
-        $._currentStakingRouter = router;
+        $._currentStakingRouter = IStakingRouter(router);
         emit CurrentStakingRouterUpdated(router);
     }
 
@@ -92,18 +92,18 @@ contract VaultETH is
         if (!$._stakingRouters.contains(router))
             revert Vault_InvalidStakingRouter(router);
 
-        $._currentUnstakingRouter = router;
+        $._currentUnstakingRouter = IStakingRouter(router);
         emit CurrentUnstakingRouterUpdated(router);
     }
 
     function getCurrentStakingRouter() external view returns (address) {
         VaultETHStorage storage $ = _getVaultETHStorage();
-        return $._currentStakingRouter;
+        return address($._currentStakingRouter);
     }
 
     function getCurrentUnstakingRouter() external view returns (address) {
         VaultETHStorage storage $ = _getVaultETHStorage();
-        return $._currentUnstakingRouter;
+        return address($._currentUnstakingRouter);
     }
 
     function getStakingRouters() external view returns (address[] memory) {
@@ -118,7 +118,7 @@ contract VaultETH is
         $._totalETH += amount;
 
         // Stake ETH through StakingRouter, transfer the LST token back to the Vault
-        IStakingRouter stakingRouter = IStakingRouter($._currentStakingRouter);
+        IStakingRouter stakingRouter = $._currentStakingRouter;
         stakingRouter.stake{value: amount}(address(this), amount); // stake ETH on behalf of the Vault
     }
 
@@ -129,9 +129,7 @@ contract VaultETH is
         if (cachedTotalETH < amount) revert Vault_InsufficientCollateral();
         $._totalETH = cachedTotalETH - amount;
 
-        IStakingRouter unstakingRouter = IStakingRouter(
-            $._currentUnstakingRouter
-        );
+        IStakingRouter unstakingRouter = $._currentUnstakingRouter;
 
         (address lstToken, uint256 exchangeRate) = unstakingRouter
             .getStakedTokenAndExchangeRate();
@@ -140,7 +138,7 @@ contract VaultETH is
 
         // Approve the StakingRouter to use LST token
         // Unstake using the user's address as "to"
-        IERC20(lstToken).approve(address(unstakingRouter), lstAmount);
+        IERC20(lstToken).forceApprove(address(unstakingRouter), lstAmount);
         unstakingRouter.unstake(to, lstAmount);
     }
 

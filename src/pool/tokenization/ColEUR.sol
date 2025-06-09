@@ -23,9 +23,9 @@ contract ColEUR is
 
     function initialize(
         address initialAuthority,
-        IERC20 asset,
         string memory name,
-        string memory symbol
+        string memory symbol,
+        IERC20 asset
     ) public initializer {
         __AccessManaged_init(initialAuthority);
         __ERC4626_init(asset);

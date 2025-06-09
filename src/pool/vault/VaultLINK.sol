@@ -23,8 +23,7 @@ contract VaultLINK is
 
     struct VaultLINKStorage {
         uint256 _totalLINK;
-        IERC20 _link;
-        IERC20 _stLINK;
+        IERC20 _link; // Underlying token
         IStakingRouter _currentStakingRouter;
         IStakingRouter _currentUnstakingRouter;
         EnumerableSet.AddressSet _stakingRouters;
@@ -49,9 +48,15 @@ contract VaultLINK is
         _disableInitializers();
     }
 
-    function initialize(address initialAuthority) public initializer {
+    function initialize(
+        address initialAuthority,
+        address link
+    ) public initializer {
         __AccessManaged_init(initialAuthority);
         __UUPSUpgradeable_init();
+
+        VaultLINKStorage storage $ = _getVaultLINKStorage();
+        $._link = IERC20(link);
     }
 
     function _authorizeUpgrade(
@@ -116,8 +121,7 @@ contract VaultLINK is
         VaultLINKStorage storage $ = _getVaultLINKStorage();
 
         IStakingRouter stakingRouter = $._currentStakingRouter;
-        IERC20 link = $._link;
-        link.forceApprove(address(stakingRouter), amount);
+        $._link.forceApprove(address(stakingRouter), amount);
         stakingRouter.stake(from, amount);
     }
 
@@ -125,9 +129,10 @@ contract VaultLINK is
         VaultLINKStorage storage $ = _getVaultLINKStorage();
 
         IStakingRouter unstakingRouter = $._currentUnstakingRouter;
-        IERC20 link = $._link;
-        IERC20 stLINK = $._stLINK;
-        stLINK.forceApprove(address(unstakingRouter), amount);
+        IERC20(unstakingRouter.getStakedToken()).forceApprove(
+            address(unstakingRouter),
+            amount
+        );
         unstakingRouter.unstake(to, amount);
     }
 

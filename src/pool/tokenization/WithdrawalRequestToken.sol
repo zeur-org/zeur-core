@@ -7,9 +7,9 @@ import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20P
 
 contract WithdrawalRequestToken is ERC20, ERC20Permit, AccessManaged {
     constructor(
+        address initialAuthority,
         string memory name,
-        string memory symbol,
-        address initialAuthority
+        string memory symbol
     ) ERC20(name, symbol) AccessManaged(initialAuthority) ERC20Permit(name) {}
 
     function mint(address to, uint256 amount) external restricted {

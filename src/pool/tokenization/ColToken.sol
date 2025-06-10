@@ -39,4 +39,21 @@ contract ColToken is
     function burn(address account, uint256 value) external restricted {
         _burn(account, value);
     }
+
+    // For v0, this is to prevent users from transferring colToken to other addresses
+    // For v1, we will add a validateTransfer logic based on user's health factor to allow user's transfer
+    function transfer(
+        address to,
+        uint256 value
+    ) public override restricted returns (bool) {
+        return super.transfer(to, value);
+    }
+
+    function transferFrom(
+        address from,
+        address to,
+        uint256 value
+    ) public override restricted returns (bool) {
+        return super.transferFrom(from, to, value);
+    }
 }

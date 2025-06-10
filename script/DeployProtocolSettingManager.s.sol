@@ -20,7 +20,7 @@ contract DeployProtocolSettingManager is Script {
 
         vm.startBroadcast();
 
-        address poolProxy = Upgrades.deployUUPSProxy(
+        address protocolSettingManagerProxy = Upgrades.deployUUPSProxy(
             "ProtocolSettingManager.sol",
             abi.encodeWithSelector(
                 ProtocolSettingManager.initialize.selector,
@@ -32,7 +32,10 @@ contract DeployProtocolSettingManager is Script {
         console.log(
             "------------------- Protocol Setting Manager Deployment Info -------------------"
         );
-        console.log("Protocol Setting Manager Proxy:", poolProxy);
+        console.log(
+            "Protocol Setting Manager Proxy:",
+            protocolSettingManagerProxy
+        );
         console.log("Initial Authority:", initialAuthority);
         console.log("Pool:", pool);
 

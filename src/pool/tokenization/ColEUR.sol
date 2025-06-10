@@ -76,4 +76,5 @@ contract ColEUR is
     ) public override restricted returns (uint256) {
         return super.withdraw(assets, receiver, owner);
     }
+    // ColEUR can be transferred freely since they can not be used as collateral to borrow
 }

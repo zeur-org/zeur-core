@@ -23,7 +23,6 @@ contract VaultETH is
     using EnumerableSet for EnumerableSet.AddressSet;
 
     struct VaultETHStorage {
-        uint256 _totalETH;
         IStakingRouter _currentStakingRouter;
         IStakingRouter _currentUnstakingRouter;
         EnumerableSet.AddressSet _stakingRouters;
@@ -115,7 +114,6 @@ contract VaultETH is
         if (msg.value != amount) revert Vault_InvalidAmount();
 
         VaultETHStorage storage $ = _getVaultETHStorage();
-        $._totalETH += amount;
 
         // Stake ETH through StakingRouter, transfer the LST token back to the Vault
         IStakingRouter stakingRouter = $._currentStakingRouter;
@@ -124,10 +122,6 @@ contract VaultETH is
 
     function unlockCollateral(address to, uint256 amount) external {
         VaultETHStorage storage $ = _getVaultETHStorage();
-        uint256 cachedTotalETH = $._totalETH;
-
-        if (cachedTotalETH < amount) revert Vault_InsufficientCollateral();
-        $._totalETH = cachedTotalETH - amount;
 
         IStakingRouter unstakingRouter = $._currentUnstakingRouter;
 

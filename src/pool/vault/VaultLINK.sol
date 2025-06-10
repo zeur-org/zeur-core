@@ -22,7 +22,6 @@ contract VaultLINK is
     using EnumerableSet for EnumerableSet.AddressSet;
 
     struct VaultLINKStorage {
-        uint256 _totalLINK;
         IERC20 _link; // Underlying token
         IStakingRouter _currentStakingRouter;
         IStakingRouter _currentUnstakingRouter;

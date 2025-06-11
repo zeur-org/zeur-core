@@ -4,7 +4,6 @@ pragma solidity ^0.8.30;
 import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import {Upgrades} from "@openzeppelin/foundry-upgrades/Upgrades.sol";
 
 // Core contracts
 import {Pool} from "../src/pool/Pool.sol";
@@ -13,53 +12,34 @@ import {ProtocolAccessManager} from "../src/pool/manager/ProtocolAccessManager.s
 import {ProtocolSettingManager} from "../src/pool/manager/ProtocolSettingManager.sol";
 import {ProtocolVaultManager} from "../src/pool/manager/ProtocolVaultManager.sol";
 import {ChainlinkOracleManager} from "../src/chainlink/ChainlinkOracleManager.sol";
-
 // Staking routers
 import {StakingRouterLINK} from "../src/pool/router/StakingRouterLINK.sol";
 import {StakingRouterETHLido} from "../src/pool/router/StakingRouterETHLido.sol";
 import {StakingRouterETHMorpho} from "../src/pool/router/StakingRouterETHMorpho.sol";
 import {StakingRouterETHEtherfi} from "../src/pool/router/StakingRouterETHEtherfi.sol";
 import {StakingRouterETHRocketPool} from "../src/pool/router/StakingRouterETHRocketPool.sol";
-
 // Tokenization
 import {ColEUR} from "../src/pool/tokenization/ColEUR.sol";
 import {ColToken} from "../src/pool/tokenization/ColToken.sol";
 import {DebtEUR} from "../src/pool/tokenization/DebtEUR.sol";
-
 // Vaults
 import {VaultETH} from "../src/pool/vault/VaultETH.sol";
 import {VaultLINK} from "../src/pool/vault/VaultLINK.sol";
-
 // Interfaces
 import {IPool} from "../src/interfaces/pool/IPool.sol";
 import {IChainlinkOracleManager} from "../src/interfaces/chainlink/IChainlinkOracleManager.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ETH_ADDRESS, INITIAL_ADMIN, POOL_ADMIN, VAULT_ADMIN} from "../src/helpers/Constants.sol";
+import {Roles} from "../src/helpers/Roles.sol";
 
-contract SetupHelpers is Script {
-    address initialAdmin = vm.envAddress("INITIAL_ADMIN");
-    address initialAuthority = vm.envAddress("INITIAL_AUTHORITY");
+// Mock contracts
+import {MockChainlinkOracleManager, MockERC20, MockPriorityPool, MockWithdrawalQueue, MockMorphoVault, MockWETH, MockRETH, MockRocketDepositPool, MockRocketDAOSettings} from "./TestMockHelpers.sol";
+import {MockLido} from "../src/mock/MockLido.sol";
 
-    address lidoStETH = vm.envAddress("LIDO_STETH");
-    address lidoWithdrawQueue = vm.envAddress("LIDO_WITHDRAWQUEUE");
-
-    address etherfiETH = vm.envAddress("ETHERFI_EETH");
-    address etherfiPool = vm.envAddress("ETHERFI_POOL");
-
-    address rocketRETH = vm.envAddress("ROCKET_RETH");
-    address rocketPool = vm.envAddress("ROCKET_POOL");
-    address rocketProtocolSetting = vm.envAddress("ROCKET_PROTOCOL_SETTING");
-
-    address morphoETH = vm.envAddress("MORPHO_ETH");
-
-    address link = vm.envAddress("LINK_TOKEN");
-    address stLink = vm.envAddress("STAKELINK_STLINK");
-    address priorityPool = vm.envAddress("STAKELINK_PRIORITY_POOL");
-
-    address oracleManager = vm.envAddress("ORACLE_MANAGER");
-    address pool = vm.envAddress("POOL");
-
-    string colEURName = vm.envString("COLEUR_NAME");
-    string colEURSymbol = vm.envString("COLEUR_SYMBOL");
+contract TestSetupLocalHelpers is Script {
+    address public initialAdmin = INITIAL_ADMIN;
+    address public poolAdmin = POOL_ADMIN;
+    address public vaultAdmin = VAULT_ADMIN;
 
     struct CoreContracts {
         Pool pool;
@@ -68,15 +48,6 @@ contract SetupHelpers is Script {
         ProtocolSettingManager settingManager;
         ProtocolVaultManager vaultManager;
     }
-
-    struct StakingRouters {
-        StakingRouterLINK stakingRouterLINK;
-        StakingRouterETHLido stakingRouterETHLido;
-        StakingRouterETHMorpho stakingRouterETHMorpho;
-        StakingRouterETHEtherfi stakingRouterETHEtherfi;
-        StakingRouterETHRocketPool stakingRouterETHRocketPool;
-    }
-
     struct TokenizationContracts {
         ColToken colETH;
         ColToken colLINK;
@@ -89,19 +60,27 @@ contract SetupHelpers is Script {
         VaultLINK vaultLINK;
     }
 
+    struct StakingRouters {
+        StakingRouterLINK stakingRouterLINK;
+        StakingRouterETHLido stakingRouterETHLido;
+        StakingRouterETHMorpho stakingRouterETHMorpho;
+        StakingRouterETHEtherfi stakingRouterETHEtherfi;
+        StakingRouterETHRocketPool stakingRouterETHRocketPool;
+    }
+
     struct MockContracts {
-        MockChainlinkOracleManager oracleManager;
         MockERC20 linkToken;
         MockERC20 stLinkToken;
         MockERC20 eurToken;
-        MockPriorityPool linkPriorityPool;
-        MockLido stETH;
-        MockWithdrawalQueue withdrawalQueue;
-        MockMorphoVault morphoVault;
         MockWETH wETH;
         MockRETH rETH;
+        MockLido stETH;
+        MockPriorityPool linkPriorityPool;
+        MockWithdrawalQueue withdrawalQueue;
+        MockMorphoVault morphoVault;
         MockRocketDepositPool rocketDepositPool;
         MockRocketDAOSettings rocketDAOSettings;
+        MockChainlinkOracleManager oracleManager;
     }
 
     CoreContracts public coreContracts;
@@ -116,9 +95,16 @@ contract SetupHelpers is Script {
         admin = address(this);
     }
 
-    function deployAll() public returns (CoreContracts memory) {
-        vm.startBroadcast();
-
+    function deployAll()
+        public
+        returns (
+            CoreContracts memory,
+            TokenizationContracts memory,
+            VaultContracts memory,
+            StakingRouters memory,
+            MockContracts memory
+        )
+    {
         // Deploy mock external contracts first
         _deployMockContracts();
 
@@ -140,9 +126,13 @@ contract SetupHelpers is Script {
         // Setup initial configurations
         _setupInitialConfigurations();
 
-        vm.stopBroadcast();
-
-        return coreContracts;
+        return (
+            coreContracts,
+            tokenizationContracts,
+            vaultContracts,
+            stakingRouters,
+            mockContracts
+        );
     }
 
     function _deployMockContracts() internal {
@@ -178,8 +168,9 @@ contract SetupHelpers is Script {
     }
 
     function _deployAccessManager() internal {
-        address protocolAccessManagerProxy = Upgrades.deployUUPSProxy(
-            "ProtocolAccessManager.sol",
+        ProtocolAccessManager protocolAccessManagerImpl = new ProtocolAccessManager();
+        ERC1967Proxy protocolAccessManagerProxy = new ERC1967Proxy(
+            address(protocolAccessManagerImpl),
             abi.encodeWithSelector(
                 ProtocolAccessManager.initialize.selector,
                 initialAdmin
@@ -197,12 +188,13 @@ contract SetupHelpers is Script {
     }
 
     function _deployPool() internal {
-        address poolProxy = Upgrades.deployUUPSProxy(
-            "Pool.sol",
+        Pool poolImpl = new Pool();
+        ERC1967Proxy poolProxy = new ERC1967Proxy(
+            address(poolImpl),
             abi.encodeWithSelector(
                 Pool.initialize.selector,
-                initialAuthority,
-                oracleManager
+                address(coreContracts.accessManager),
+                address(mockContracts.oracleManager)
             )
         );
 
@@ -212,13 +204,14 @@ contract SetupHelpers is Script {
     }
 
     function _deployPoolData() internal {
-        address poolDataProxy = Upgrades.deployUUPSProxy(
-            "PoolData.sol",
+        PoolData poolDataImpl = new PoolData();
+        ERC1967Proxy poolDataProxy = new ERC1967Proxy(
+            address(poolDataImpl),
             abi.encodeWithSelector(
                 PoolData.initialize.selector,
-                initialAuthority,
-                pool,
-                oracleManager
+                address(coreContracts.accessManager),
+                address(coreContracts.pool),
+                address(mockContracts.oracleManager)
             )
         );
 
@@ -229,12 +222,13 @@ contract SetupHelpers is Script {
 
     function _deployManagers() internal {
         // Deploy ProtocolSettingManager
-        address protocolSettingManagerProxy = Upgrades.deployUUPSProxy(
-            "ProtocolSettingManager.sol",
+        ProtocolSettingManager protocolSettingManagerImpl = new ProtocolSettingManager();
+        ERC1967Proxy protocolSettingManagerProxy = new ERC1967Proxy(
+            address(protocolSettingManagerImpl),
             abi.encodeWithSelector(
                 ProtocolSettingManager.initialize.selector,
-                initialAuthority,
-                pool
+                address(coreContracts.accessManager),
+                address(coreContracts.pool)
             )
         );
 
@@ -243,8 +237,9 @@ contract SetupHelpers is Script {
         );
 
         // Deploy ProtocolVaultManager
-        address protocolVaultManagerProxy = Upgrades.deployUUPSProxy(
-            "ProtocolVaultManager.sol",
+        ProtocolVaultManager protocolVaultManagerImpl = new ProtocolVaultManager();
+        ERC1967Proxy protocolVaultManagerProxy = new ERC1967Proxy(
+            address(protocolVaultManagerImpl),
             abi.encodeWithSelector(
                 ProtocolVaultManager.initialize.selector,
                 address(coreContracts.accessManager)
@@ -259,23 +254,10 @@ contract SetupHelpers is Script {
     }
 
     function _deployTokenizationContracts() internal {
-        // Deploy ColEUR
-        address colEURProxy = Upgrades.deployUUPSProxy(
-            "ColEUR.sol",
-            abi.encodeWithSelector(
-                ColEUR.initialize.selector,
-                address(coreContracts.accessManager),
-                IERC20(address(mockContracts.eurToken)),
-                colEURName,
-                colEURSymbol
-            )
-        );
-
-        tokenizationContracts.colEUR = ColEUR(address(colEURProxy));
-
         // Deploy ColTokens
-        address colETHProxy = Upgrades.deployUUPSProxy(
-            "ColToken.sol",
+        ColToken colETHImpl = new ColToken();
+        ERC1967Proxy colETHProxy = new ERC1967Proxy(
+            address(colETHImpl),
             abi.encodeWithSelector(
                 ColToken.initialize.selector,
                 address(coreContracts.accessManager),
@@ -284,10 +266,11 @@ contract SetupHelpers is Script {
             )
         );
 
-        tokenizationContracts.colLINK = ColToken(address(colETHProxy));
+        tokenizationContracts.colETH = ColToken(address(colETHProxy));
 
-        address colLINKProxy = Upgrades.deployUUPSProxy(
-            "ColToken.sol",
+        ColToken colLINKImpl = new ColToken();
+        ERC1967Proxy colLINKProxy = new ERC1967Proxy(
+            address(colLINKImpl),
             abi.encodeWithSelector(
                 ColToken.initialize.selector,
                 address(coreContracts.accessManager),
@@ -298,9 +281,25 @@ contract SetupHelpers is Script {
 
         tokenizationContracts.colLINK = ColToken(address(colLINKProxy));
 
+        // Deploy ColEUR
+        ColEUR colEURImpl = new ColEUR();
+        ERC1967Proxy colEURProxy = new ERC1967Proxy(
+            address(colEURImpl),
+            abi.encodeWithSelector(
+                ColEUR.initialize.selector,
+                address(coreContracts.accessManager),
+                "Collateral EUR",
+                "colEUR",
+                IERC20(address(mockContracts.eurToken))
+            )
+        );
+
+        tokenizationContracts.colEUR = ColEUR(address(colEURProxy));
+
         // Deploy DebtEUR
-        address debtEURProxy = Upgrades.deployUUPSProxy(
-            "DebtEUR.sol",
+        DebtEUR debtEURImpl = new DebtEUR();
+        ERC1967Proxy debtEURProxy = new ERC1967Proxy(
+            address(debtEURImpl),
             abi.encodeWithSelector(
                 DebtEUR.initialize.selector,
                 address(coreContracts.accessManager),
@@ -316,8 +315,9 @@ contract SetupHelpers is Script {
 
     function _deployVaults() internal {
         // Deploy VaultETH
-        address vaultETHProxy = Upgrades.deployUUPSProxy(
-            "VaultETH.sol",
+        VaultETH vaultETHImpl = new VaultETH();
+        ERC1967Proxy vaultETHProxy = new ERC1967Proxy(
+            address(vaultETHImpl),
             abi.encodeWithSelector(
                 VaultETH.initialize.selector,
                 address(coreContracts.accessManager)
@@ -327,11 +327,13 @@ contract SetupHelpers is Script {
         vaultContracts.vaultETH = VaultETH(payable(address(vaultETHProxy)));
 
         // Deploy VaultLINK
-        address vaultLINKProxy = Upgrades.deployUUPSProxy(
-            "VaultLINK.sol",
+        VaultLINK vaultLINKImpl = new VaultLINK();
+        ERC1967Proxy vaultLINKProxy = new ERC1967Proxy(
+            address(vaultLINKImpl),
             abi.encodeWithSelector(
                 VaultLINK.initialize.selector,
-                address(coreContracts.accessManager)
+                address(coreContracts.accessManager),
+                address(mockContracts.linkToken)
             )
         );
 
@@ -341,69 +343,74 @@ contract SetupHelpers is Script {
     }
 
     function _deployStakingRouters() internal {
-        address lidoRouterProxy = Upgrades.deployUUPSProxy(
-            "StakingRouterETHLido.sol",
+        StakingRouterETHLido stakingRouterETHLidoImpl = new StakingRouterETHLido();
+        ERC1967Proxy stakingRouterETHLidoProxy = new ERC1967Proxy(
+            address(stakingRouterETHLidoImpl),
             abi.encodeWithSelector(
                 StakingRouterETHLido.initialize.selector,
-                initialAuthority,
-                lidoStETH,
-                lidoWithdrawQueue
+                address(coreContracts.accessManager),
+                address(mockContracts.stETH),
+                address(mockContracts.withdrawalQueue)
             )
         );
 
         stakingRouters.stakingRouterETHLido = StakingRouterETHLido(
-            address(lidoRouterProxy)
+            address(stakingRouterETHLidoProxy)
         );
 
-        address etherfiRouterProxy = Upgrades.deployUUPSProxy(
-            "StakingRouterETHEtherfi.sol",
+        StakingRouterETHEtherfi stakingRouterETHEtherfiImpl = new StakingRouterETHEtherfi();
+        ERC1967Proxy stakingRouterETHEtherfiProxy = new ERC1967Proxy(
+            address(stakingRouterETHEtherfiImpl),
             abi.encodeWithSelector(
                 StakingRouterETHEtherfi.initialize.selector,
-                initialAuthority
+                address(coreContracts.accessManager)
             )
         );
 
         stakingRouters.stakingRouterETHEtherfi = StakingRouterETHEtherfi(
-            address(etherfiRouterProxy)
+            address(stakingRouterETHEtherfiProxy)
         );
 
-        address rocketRouterProxy = Upgrades.deployUUPSProxy(
-            "StakingRouterETHRocketPool.sol",
+        StakingRouterETHRocketPool stakingRouterETHRocketPoolImpl = new StakingRouterETHRocketPool();
+        ERC1967Proxy stakingRouterETHRocketPoolProxy = new ERC1967Proxy(
+            address(stakingRouterETHRocketPoolImpl),
             abi.encodeWithSelector(
                 StakingRouterETHRocketPool.initialize.selector,
-                initialAuthority,
-                rocketRETH,
-                rocketPool,
-                rocketProtocolSetting
+                address(coreContracts.accessManager),
+                address(mockContracts.rETH),
+                address(mockContracts.rocketDepositPool),
+                address(mockContracts.rocketDAOSettings)
             )
         );
 
         stakingRouters.stakingRouterETHRocketPool = StakingRouterETHRocketPool(
-            address(rocketRouterProxy)
+            address(stakingRouterETHRocketPoolProxy)
         );
 
-        address morphoRouterProxy = Upgrades.deployUUPSProxy(
-            "StakingRouterETHMorpho.sol",
+        StakingRouterETHMorpho stakingRouterETHMorphoImpl = new StakingRouterETHMorpho();
+        ERC1967Proxy stakingRouterETHMorphoProxy = new ERC1967Proxy(
+            address(stakingRouterETHMorphoImpl),
             abi.encodeWithSelector(
                 StakingRouterETHMorpho.initialize.selector,
-                initialAuthority,
-                morphoETH,
-                mockContracts.morphoVault
+                address(coreContracts.accessManager),
+                address(mockContracts.wETH),
+                address(mockContracts.morphoVault)
             )
         );
 
         stakingRouters.stakingRouterETHMorpho = StakingRouterETHMorpho(
-            address(morphoRouterProxy)
+            address(stakingRouterETHMorphoProxy)
         );
 
-        address stakingRouterLINKProxy = Upgrades.deployUUPSProxy(
-            "StakingRouterLINK.sol",
+        StakingRouterLINK stakingRouterLINKImpl = new StakingRouterLINK();
+        ERC1967Proxy stakingRouterLINKProxy = new ERC1967Proxy(
+            address(stakingRouterLINKImpl),
             abi.encodeWithSelector(
                 StakingRouterLINK.initialize.selector,
-                initialAuthority,
-                stLink,
-                link,
-                priorityPool
+                address(coreContracts.accessManager),
+                address(mockContracts.stLinkToken),
+                address(mockContracts.linkToken),
+                address(mockContracts.linkPriorityPool)
             )
         );
 
@@ -415,10 +422,14 @@ contract SetupHelpers is Script {
     }
 
     function _setupInitialConfigurations() internal {
+        _setupAccessManager();
+
         // Setup asset configurations in the pool
+        vm.startPrank(poolAdmin);
         _setupETHConfiguration();
         _setupLINKConfiguration();
         _setupEURConfiguration();
+        vm.stopPrank();
 
         // Setup vault staking routers
         _setupVaultRouters();
@@ -426,18 +437,137 @@ contract SetupHelpers is Script {
         console.log("Initial configurations set up");
     }
 
+    function _setupAccessManager() internal {
+        vm.startPrank(initialAdmin);
+        // Setup role in Pool contract
+        coreContracts.accessManager.labelRole(
+            Roles.POOL_INIT_RESERVE_ROLE,
+            Roles.POOL_INIT_RESERVE_ROLE_NAME
+        );
+        coreContracts.accessManager.grantRole(
+            Roles.POOL_INIT_RESERVE_ROLE,
+            poolAdmin,
+            0
+        );
+        coreContracts.accessManager.setTargetFunctionRole(
+            address(coreContracts.pool),
+            Roles.getPoolSelectors(),
+            Roles.POOL_INIT_RESERVE_ROLE
+        );
+
+        // Setup role in VaultETH/VaultLINK contract
+        coreContracts.accessManager.labelRole(
+            Roles.VAULT_LOCK_COLLATERAL_ROLE,
+            Roles.VAULT_LOCK_COLLATERAL_ROLE_NAME
+        );
+        coreContracts.accessManager.grantRole(
+            Roles.VAULT_LOCK_COLLATERAL_ROLE,
+            address(coreContracts.pool),
+            0
+        );
+        coreContracts.accessManager.setTargetFunctionRole(
+            address(vaultContracts.vaultETH),
+            Roles.getVaultSetupSelectors(),
+            Roles.VAULT_LOCK_COLLATERAL_ROLE
+        );
+        coreContracts.accessManager.setTargetFunctionRole(
+            address(vaultContracts.vaultLINK),
+            Roles.getVaultSetupSelectors(),
+            Roles.VAULT_LOCK_COLLATERAL_ROLE
+        );
+
+        // Setup role in ColToken/ColEUR/DebtEUR contract
+        coreContracts.accessManager.labelRole(
+            Roles.MINTER_BURNER_ROLE,
+            Roles.MINTER_BURNER_ROLE_NAME
+        );
+        coreContracts.accessManager.grantRole(
+            Roles.MINTER_BURNER_ROLE,
+            address(coreContracts.pool),
+            0
+        );
+        coreContracts.accessManager.setTargetFunctionRole(
+            address(tokenizationContracts.colETH),
+            Roles.getMinterColTokenSelectors(),
+            Roles.MINTER_BURNER_ROLE
+        );
+        coreContracts.accessManager.setTargetFunctionRole(
+            address(tokenizationContracts.colLINK),
+            Roles.getMinterColTokenSelectors(),
+            Roles.MINTER_BURNER_ROLE
+        );
+        coreContracts.accessManager.setTargetFunctionRole(
+            address(tokenizationContracts.colEUR),
+            Roles.getMinterColEURSelectors(),
+            Roles.MINTER_BURNER_ROLE
+        );
+        coreContracts.accessManager.setTargetFunctionRole(
+            address(tokenizationContracts.debtEUR),
+            Roles.getMinterDebtEURSelectors(),
+            Roles.MINTER_BURNER_ROLE
+        );
+
+        // Setup role in StakingRouterETHLido/StakingRouterETHMorpho/StakingRouterETHEtherfi/StakingRouterETHRocketPool contract
+        coreContracts.accessManager.labelRole(
+            Roles.ROUTER_ETH_VAULT_ROLE,
+            Roles.ROUTER_ETH_VAULT_ROLE_NAME
+        );
+        coreContracts.accessManager.grantRole(
+            Roles.ROUTER_ETH_VAULT_ROLE,
+            address(vaultContracts.vaultETH),
+            0
+        );
+        coreContracts.accessManager.setTargetFunctionRole(
+            address(stakingRouters.stakingRouterETHLido),
+            Roles.getRouterETHVaultSelectors(),
+            Roles.ROUTER_ETH_VAULT_ROLE
+        );
+        coreContracts.accessManager.setTargetFunctionRole(
+            address(stakingRouters.stakingRouterETHMorpho),
+            Roles.getRouterETHVaultSelectors(),
+            Roles.ROUTER_ETH_VAULT_ROLE
+        );
+        coreContracts.accessManager.setTargetFunctionRole(
+            address(stakingRouters.stakingRouterETHEtherfi),
+            Roles.getRouterETHVaultSelectors(),
+            Roles.ROUTER_ETH_VAULT_ROLE
+        );
+        coreContracts.accessManager.setTargetFunctionRole(
+            address(stakingRouters.stakingRouterETHRocketPool),
+            Roles.getRouterETHVaultSelectors(),
+            Roles.ROUTER_ETH_VAULT_ROLE
+        );
+
+        coreContracts.accessManager.labelRole(
+            Roles.ROUTER_LINK_VAULT_ROLE,
+            Roles.ROUTER_LINK_VAULT_ROLE_NAME
+        );
+        coreContracts.accessManager.grantRole(
+            Roles.ROUTER_LINK_VAULT_ROLE,
+            address(vaultContracts.vaultLINK),
+            0
+        );
+        coreContracts.accessManager.setTargetFunctionRole(
+            address(stakingRouters.stakingRouterLINK),
+            Roles.getRouterLinkVaultSelectors(),
+            Roles.ROUTER_LINK_VAULT_ROLE
+        );
+
+        vm.stopPrank();
+    }
+
     function _setupETHConfiguration() internal {
-        address ethAddress = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+        address ethAddress = ETH_ADDRESS;
 
         IPool.CollateralConfiguration memory ethConfig = IPool
             .CollateralConfiguration({
                 ltv: 8000, // 80%
                 liquidationThreshold: 8500, // 85%
-                liquidationBonus: 500, // 5%
+                liquidationBonus: 10500, // 105%
                 liquidationProtocolFee: 1000, // 10%
                 reserveFactor: 1000, // 10%
-                supplyCap: 1000000 ether,
-                borrowCap: 800000 ether,
+                supplyCap: 1000000 ether, // 1M ETH
+                borrowCap: 800000 ether, // 800k ETH
                 colToken: address(tokenizationContracts.colETH),
                 tokenVault: address(vaultContracts.vaultETH),
                 isFrozen: false,
@@ -452,11 +582,11 @@ contract SetupHelpers is Script {
             .CollateralConfiguration({
                 ltv: 7000, // 70%
                 liquidationThreshold: 7500, // 75%
-                liquidationBonus: 500, // 5%
+                liquidationBonus: 11000, // 110%
                 liquidationProtocolFee: 1000, // 10%
                 reserveFactor: 1000, // 10%
-                supplyCap: 100000 ether,
-                borrowCap: 70000 ether,
+                supplyCap: 100000 ether, // 100k LINK
+                borrowCap: 70000 ether, // 70k LINK
                 colToken: address(tokenizationContracts.colLINK),
                 tokenVault: address(vaultContracts.vaultLINK),
                 isFrozen: false,
@@ -491,11 +621,16 @@ contract SetupHelpers is Script {
             address(stakingRouters.stakingRouterETHLido)
         );
         vaultContracts.vaultETH.addStakingRouter(
-            address(stakingRouters.stakingRouterETHMorpho)
+            address(stakingRouters.stakingRouterETHEtherfi)
         );
         vaultContracts.vaultETH.addStakingRouter(
             address(stakingRouters.stakingRouterETHRocketPool)
         );
+        vaultContracts.vaultETH.addStakingRouter(
+            address(stakingRouters.stakingRouterETHMorpho)
+        );
+
+        // Set Lido as the current staking/unstaking router
         vaultContracts.vaultETH.updateCurrentStakingRouter(
             address(stakingRouters.stakingRouterETHLido)
         );
@@ -519,9 +654,21 @@ contract SetupHelpers is Script {
     function getDeployedContracts()
         external
         view
-        returns (CoreContracts memory)
+        returns (
+            CoreContracts memory,
+            TokenizationContracts memory,
+            VaultContracts memory,
+            StakingRouters memory,
+            MockContracts memory
+        )
     {
-        return coreContracts;
+        return (
+            coreContracts,
+            tokenizationContracts,
+            vaultContracts,
+            stakingRouters,
+            mockContracts
+        );
     }
 
     function setupUserWithTokens(
@@ -536,187 +683,5 @@ contract SetupHelpers is Script {
         // Mint tokens to user
         mockContracts.linkToken.mint(user, linkAmount);
         mockContracts.eurToken.mint(user, eurAmount);
-    }
-}
-
-// Mock contracts for testing
-contract MockChainlinkOracleManager {
-    mapping(address => uint256) public prices;
-
-    constructor() {
-        // Set default prices (8 decimals, like Chainlink)
-        prices[0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE] = 200000000000; // ETH: $2000
-    }
-
-    function getAssetPrice(address asset) external view returns (uint256) {
-        return prices[asset];
-    }
-
-    function setAssetPrice(address asset, uint256 price) external {
-        prices[asset] = price;
-    }
-}
-
-contract MockERC20 {
-    string public name;
-    string public symbol;
-    uint8 public decimals = 18;
-    uint256 public totalSupply;
-
-    mapping(address => uint256) public balanceOf;
-    mapping(address => mapping(address => uint256)) public allowance;
-
-    constructor(string memory _name, string memory _symbol) {
-        name = _name;
-        symbol = _symbol;
-    }
-
-    function mint(address to, uint256 amount) external {
-        totalSupply += amount;
-        balanceOf[to] += amount;
-    }
-
-    function transfer(address to, uint256 amount) external returns (bool) {
-        balanceOf[msg.sender] -= amount;
-        balanceOf[to] += amount;
-        return true;
-    }
-
-    function transferFrom(
-        address from,
-        address to,
-        uint256 amount
-    ) external returns (bool) {
-        allowance[from][msg.sender] -= amount;
-        balanceOf[from] -= amount;
-        balanceOf[to] += amount;
-        return true;
-    }
-
-    function approve(address spender, uint256 amount) external returns (bool) {
-        allowance[msg.sender][spender] = amount;
-        return true;
-    }
-}
-
-contract MockPriorityPool {
-    function deposit(
-        uint256 amount,
-        bool shouldQueue,
-        bytes[] calldata data
-    ) external {}
-
-    function withdraw(
-        uint256 amount,
-        uint256 amountOut,
-        uint256 sharesOut,
-        bytes32[] calldata proof,
-        bool shouldUnqueue,
-        bool shouldQueueWithdrawal,
-        bytes[] calldata data
-    ) external {}
-}
-
-contract MockLido {
-    function submit(address referral) external payable returns (uint256) {
-        return msg.value; // 1:1 for simplicity
-    }
-}
-
-contract MockWithdrawalQueue {
-    function requestWithdrawals(
-        uint256[] calldata amounts,
-        address owner
-    ) external returns (uint256[] memory) {
-        uint256[] memory requestIds = new uint256[](amounts.length);
-        for (uint256 i = 0; i < amounts.length; i++) {
-            requestIds[i] = i + 1;
-        }
-        return requestIds;
-    }
-
-    function claimWithdrawal(uint256 requestId) external {}
-}
-
-contract MockWETH {
-    function deposit() external payable {}
-
-    function withdraw(uint256 amount) external {}
-
-    function approve(address spender, uint256 amount) external returns (bool) {
-        return true;
-    }
-}
-
-contract MockMorphoVault {
-    address public immutable asset;
-
-    constructor(address _asset) {
-        asset = _asset;
-    }
-
-    function deposit(
-        uint256 assets,
-        address receiver
-    ) external returns (uint256) {
-        return assets; // 1:1 for simplicity
-    }
-
-    function withdraw(
-        uint256 assets,
-        address receiver,
-        address owner
-    ) external returns (uint256) {
-        return assets;
-    }
-
-    function transfer(address to, uint256 amount) external returns (bool) {
-        return true;
-    }
-
-    function transferFrom(
-        address from,
-        address to,
-        uint256 amount
-    ) external returns (bool) {
-        return true;
-    }
-
-    function approve(address spender, uint256 amount) external returns (bool) {
-        return true;
-    }
-}
-
-contract MockRETH {
-    function getRethValue(uint256 ethAmount) external pure returns (uint256) {
-        return (ethAmount * 95) / 100; // Simplified exchange rate
-    }
-
-    function getEthValue(uint256 rethAmount) external pure returns (uint256) {
-        return (rethAmount * 100) / 95; // Inverse of above
-    }
-
-    function getExchangeRate() external pure returns (uint256) {
-        return 1050000000000000000; // 1.05 ETH per rETH
-    }
-
-    function burn(uint256 amount) external {}
-
-    function transferFrom(
-        address from,
-        address to,
-        uint256 amount
-    ) external returns (bool) {
-        return true;
-    }
-}
-
-contract MockRocketDepositPool {
-    function deposit() external payable {}
-}
-
-contract MockRocketDAOSettings {
-    function getDepositFee() external pure returns (uint256) {
-        return 5000000000000000; // 0.5%
     }
 }

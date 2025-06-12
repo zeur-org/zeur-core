@@ -62,6 +62,7 @@ interface IPool {
     // Pack into 4 slots
     struct DebtConfiguration {
         uint256 supplyCap;
+        uint256 borrowCap;
         address colToken;
         address debtToken;
         uint16 reserveFactor; // e.g. 1000 for 10% (in bps)

@@ -29,7 +29,7 @@ import {VaultLINK} from "../src/pool/vault/VaultLINK.sol";
 import {IPool} from "../src/interfaces/pool/IPool.sol";
 import {IChainlinkOracleManager} from "../src/interfaces/chainlink/IChainlinkOracleManager.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ETH_ADDRESS, INITIAL_ADMIN, POOL_ADMIN, VAULT_ADMIN} from "../src/helpers/Constants.sol";
+import {ETH_ADDRESS, INITIAL_ADMIN, POOL_ADMIN, VAULT_ADMIN, BPS_BASE, EURC_PRECISION, EURI_PRECISION, LINK_PRECISION} from "../src/helpers/Constants.sol";
 import {Roles} from "../src/helpers/Roles.sol";
 
 // Mock contracts
@@ -601,7 +601,8 @@ contract TestSetupLocalHelpers is Script {
 
     function _setupEURConfiguration() internal {
         IPool.DebtConfiguration memory eurConfig = IPool.DebtConfiguration({
-            supplyCap: 10000000 ether, // 10M EUR
+            supplyCap: 1000000000 * EURC_PRECISION, // 1B EURC
+            borrowCap: 800000000 * EURC_PRECISION, // 800M EURC
             reserveFactor: 1000, // 10%
             colToken: address(tokenizationContracts.colEUR),
             debtToken: address(tokenizationContracts.debtEUR),

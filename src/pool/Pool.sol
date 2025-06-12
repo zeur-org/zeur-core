@@ -81,7 +81,12 @@ contract Pool is
         if ($._collateralAssetList.contains(asset)) {
             CollateralConfiguration memory configuration = $
                 ._collateralConfigurations[asset];
-            _validateCollateral(configuration, amount, UserAction.Supply);
+            _validateCollateralAsset(
+                asset,
+                amount,
+                UserAction.Supply,
+                configuration
+            );
 
             IColToken colToken = IColToken(configuration.colToken);
             IVault tokenVault = IVault(configuration.tokenVault);
@@ -111,7 +116,7 @@ contract Pool is
             DebtConfiguration memory configuration = $._debtConfigurations[
                 asset
             ];
-            _validateDebt(configuration, asset, amount, UserAction.Supply);
+            _validateDebtAsset(asset, amount, UserAction.Supply, configuration);
 
             assetToken.safeTransferFrom(from, address(this), amount);
             assetToken.forceApprove(configuration.colToken, amount);
@@ -134,7 +139,12 @@ contract Pool is
         if ($._collateralAssetList.contains(asset)) {
             CollateralConfiguration memory configuration = $
                 ._collateralConfigurations[asset];
-            _validateCollateral(configuration, amount, UserAction.Withdraw);
+            _validateCollateralAsset(
+                asset,
+                amount,
+                UserAction.Withdraw,
+                configuration
+            );
 
             IColToken colToken = IColToken(configuration.colToken);
 
@@ -145,10 +155,14 @@ contract Pool is
             IVault tokenVault = IVault(configuration.tokenVault);
             if (asset == ETH_ADDRESS) {
                 tokenVault.unlockCollateral(to, amount);
-            } else {}
+            } else {
+                // TODO: unlockCollateral for ERC20
+            }
 
             // Transfer collateral back to user
-        } else if ($._debtAssetList.contains(asset)) {} else {
+        } else if ($._debtAssetList.contains(asset)) {
+            // TODO: withdraw from colEUR
+        } else {
             revert Pool_AssetNotAllowed(asset);
         }
 
@@ -173,7 +187,7 @@ contract Pool is
             revert Pool_AssetNotAllowed(asset);
 
         DebtConfiguration memory configuration = $._debtConfigurations[asset];
-        _validateDebt(configuration, asset, amount, UserAction.Borrow);
+        _validateDebtAsset(asset, amount, UserAction.Borrow, configuration);
 
         // Check availableBorrowsValue of msg.sender
         // Get value of asset amount to be borrowed
@@ -207,7 +221,7 @@ contract Pool is
             revert Pool_AssetNotAllowed(asset);
 
         DebtConfiguration memory configuration = $._debtConfigurations[asset];
-        _validateDebt(configuration, asset, amount, UserAction.Repay);
+        _validateDebtAsset(asset, amount, UserAction.Repay, configuration);
 
         IERC20 assetToken = IERC20(asset);
         IDebtEUR debtToken = IDebtEUR(configuration.debtToken);
@@ -227,6 +241,7 @@ contract Pool is
         uint256 debtAmount,
         address from
     ) external nonReentrant {
+        // TODO: implement logics
         // Calculate health factor
         // Verify liquidation conditions
         // Execute liquidation with proper incentives
@@ -389,13 +404,60 @@ contract Pool is
             cache.totalBorrowableValue -
             userAccountData.totalDebtValue;
 
-        // TODO: Calculate current liquidation threshold, ltv, healthFactor
+        // Calculate current liquidation threshold (weighted average)
+        if (userAccountData.totalCollateralValue > 0) {
+            uint256 weightedLiquidationThreshold = 0;
+
+            // Loop through collateral assets again to calculate weighted liquidation threshold
+            for (uint256 i; i < cache.collateralLength; i++) {
+                cache.cacheAsset = cache.collateralAssets[i];
+                cache.cacheTokenizedAsset = IERC20Metadata(
+                    $._collateralConfigurations[cache.cacheAsset].colToken
+                );
+
+                // Calculate collateral value of the individual token
+                cache.collateralValue =
+                    (cache.cacheTokenizedAsset.balanceOf(user) *
+                        cache.oracleManager.getAssetPrice(cache.cacheAsset)) /
+                    10 ** cache.cacheTokenizedAsset.decimals();
+
+                // Add weighted liquidation threshold
+                weightedLiquidationThreshold +=
+                    (cache.collateralValue *
+                        $
+                            ._collateralConfigurations[cache.cacheAsset]
+                            .liquidationThreshold) /
+                    userAccountData.totalCollateralValue;
+            }
+
+            userAccountData
+                .currentLiquidationThreshold = weightedLiquidationThreshold;
+        }
+
+        // Calculate LTV (loan-to-value ratio)
+        if (userAccountData.totalCollateralValue > 0) {
+            userAccountData.ltv =
+                (userAccountData.totalDebtValue * 10000) /
+                userAccountData.totalCollateralValue;
+        }
+
+        // Calculate health factor
+        if (userAccountData.totalDebtValue > 0) {
+            userAccountData.healthFactor =
+                (userAccountData.totalCollateralValue *
+                    userAccountData.currentLiquidationThreshold) /
+                (userAccountData.totalDebtValue * 10000);
+        } else {
+            // If no debt, health factor is at maximum (representing infinite health)
+            userAccountData.healthFactor = type(uint256).max;
+        }
     }
 
-    function _validateCollateral(
-        CollateralConfiguration memory configuration,
+    function _validateCollateralAsset(
+        address asset,
         uint256 amount,
-        UserAction action
+        UserAction action,
+        CollateralConfiguration memory configuration
     ) private view {
         if (amount == 0) revert Pool_InvalidAmount();
 
@@ -414,11 +476,11 @@ contract Pool is
         }
     }
 
-    function _validateDebt(
-        DebtConfiguration memory configuration,
+    function _validateDebtAsset(
         address asset,
         uint256 amount,
-        UserAction action
+        UserAction action,
+        DebtConfiguration memory configuration
     ) private view {
         if (amount == 0) revert Pool_InvalidAmount();
 
@@ -440,11 +502,13 @@ contract Pool is
                 configuration.supplyCap
             ) revert Pool_SupplyCapExceeded();
         }
+
+        if (action == UserAction.Borrow) {
+            if (
+                // Total EUR borrowed + new borrow must <= borrowCap
+                IERC20(configuration.debtToken).totalSupply() + amount >
+                configuration.borrowCap
+            ) revert Pool_BorrowCapExceeded();
+        }
     }
-
-    function _validateBorrow() private view {}
-
-    function _validateRepay() private view {}
-
-    function _validateLiquidate() private view {}
 }

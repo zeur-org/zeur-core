@@ -219,6 +219,7 @@ contract PoolTest is Test {
 
         IPool.DebtConfiguration memory config = IPool.DebtConfiguration({
             supplyCap: 1000000e6,
+            borrowCap: 800000e6,
             colToken: address(colEUR),
             debtToken: address(debtEUR),
             reserveFactor: 1000,

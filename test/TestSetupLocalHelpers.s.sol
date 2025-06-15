@@ -29,7 +29,7 @@ import {VaultLINK} from "../src/pool/vault/VaultLINK.sol";
 import {IPool} from "../src/interfaces/pool/IPool.sol";
 import {IChainlinkOracleManager} from "../src/interfaces/chainlink/IChainlinkOracleManager.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ETH_ADDRESS, INITIAL_ADMIN, POOL_ADMIN, VAULT_ADMIN, BPS_BASE, EURC_PRECISION, EURI_PRECISION, LINK_PRECISION} from "../src/helpers/Constants.sol";
+import {ETH_ADDRESS, INITIAL_ADMIN, POOL_ADMIN, SETTING_MANAGER_ADMIN, VAULT_ADMIN, BPS_BASE, EURC_PRECISION, EURI_PRECISION, LINK_PRECISION} from "../src/helpers/Constants.sol";
 import {Roles} from "../src/helpers/Roles.sol";
 
 // Mock contracts
@@ -39,6 +39,7 @@ import {MockTokenEURC} from "../src/mock/MockTokenEURC.sol";
 
 contract TestSetupLocalHelpers is Script {
     address public initialAdmin = INITIAL_ADMIN;
+    address public settingManagerAdmin = SETTING_MANAGER_ADMIN;
     address public poolAdmin = POOL_ADMIN;
     address public vaultAdmin = VAULT_ADMIN;
 
@@ -156,14 +157,15 @@ contract TestSetupLocalHelpers is Script {
         mockContracts.rocketDAOSettings = new MockRocketDAOSettings();
 
         // Set proper asset prices
+        mockContracts.oracleManager.setAssetPrice(ETH_ADDRESS, 3000 * 1e8); // $3000
         mockContracts.oracleManager.setAssetPrice(
             address(mockContracts.linkToken),
-            1500000000
-        ); // $15
+            20 * 1e8
+        ); // $20
         mockContracts.oracleManager.setAssetPrice(
             address(mockContracts.eurToken),
-            110000000
-        ); // $1.10
+            108 * 1e6
+        ); // $1.08
 
         console.log("Mock contracts deployed");
     }
@@ -447,13 +449,34 @@ contract TestSetupLocalHelpers is Script {
         );
         coreContracts.accessManager.grantRole(
             Roles.POOL_INIT_RESERVE_ROLE,
-            poolAdmin,
+            poolAdmin, // grant role to a EOA pool admin
+            0
+        );
+        coreContracts.accessManager.grantRole(
+            Roles.POOL_INIT_RESERVE_ROLE,
+            address(coreContracts.settingManager), // grant role to setting manager
             0
         );
         coreContracts.accessManager.setTargetFunctionRole(
             address(coreContracts.pool),
             Roles.getPoolSelectors(),
             Roles.POOL_INIT_RESERVE_ROLE
+        );
+
+        // Set ProtocolSettingManager admin
+        coreContracts.accessManager.labelRole(
+            Roles.SETTING_MANAGER_ADMIN_ROLE,
+            Roles.SETTING_MANAGER_ADMIN_ROLE_NAME
+        );
+        coreContracts.accessManager.grantRole(
+            Roles.SETTING_MANAGER_ADMIN_ROLE,
+            settingManagerAdmin, // grant role to a EOA setting manager admin
+            0
+        );
+        coreContracts.accessManager.setTargetFunctionRole(
+            address(coreContracts.settingManager),
+            Roles.getSettingManagerSelectors(),
+            Roles.SETTING_MANAGER_ADMIN_ROLE
         );
 
         // Setup role in VaultETH/VaultLINK contract

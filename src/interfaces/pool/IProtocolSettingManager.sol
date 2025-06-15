@@ -63,19 +63,11 @@ interface IProtocolSettingManager {
         uint16 reserveFactor
     ) external;
 
-    function freezeCollateral(address collateralAsset) external;
+    function freezeCollateral(address collateralAsset, bool freeze) external;
 
-    function freezeDebt(address debtAsset) external;
+    function freezeDebt(address debtAsset, bool freeze) external;
 
-    function pauseCollateral(address collateralAsset) external;
+    function pauseCollateral(address collateralAsset, bool pause) external;
 
-    function pauseDebt(address debtAsset) external;
-
-    function unfreezeCollateral(address collateralAsset) external;
-
-    function unfreezeDebt(address debtAsset) external;
-
-    function unpauseCollateral(address collateralAsset) external;
-
-    function unpauseDebt(address debtAsset) external;
+    function pauseDebt(address debtAsset, bool pause) external;
 }

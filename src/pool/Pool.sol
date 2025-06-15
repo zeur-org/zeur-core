@@ -221,7 +221,8 @@ contract Pool is
         debtEUR.mint(msg.sender, amount);
 
         // Transfer EUR from colEUR to "to" address
-        IERC20(asset).safeTransferFrom(configuration.colToken, to, amount);
+        IColEUR colEUR = IColEUR(configuration.colToken);
+        colEUR.transferTokenTo(to, amount);
     }
 
     function repay(
@@ -413,9 +414,11 @@ contract Pool is
                 10 ** cache.cacheTokenizedAsset.decimals();
         }
 
-        userAccountData.availableBorrowsValue =
-            cache.totalBorrowableValue -
-            userAccountData.totalDebtValue;
+        // If the total debt is > total borrowable then available borrow = 0
+        userAccountData.availableBorrowsValue = cache.totalBorrowableValue >
+            userAccountData.totalDebtValue
+            ? cache.totalBorrowableValue - userAccountData.totalDebtValue
+            : 0;
 
         // Calculate current liquidation threshold (weighted average)
         if (userAccountData.totalCollateralValue > 0) {

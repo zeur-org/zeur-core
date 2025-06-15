@@ -244,6 +244,22 @@ contract ProtocolSettingManager is
         $._pool.setDebtConfiguration(debtAsset, debtConfiguration);
     }
 
+    function setDebtBorrowCap(
+        address debtAsset,
+        uint256 borrowCap
+    ) external restricted {
+        ProtocolSettingManagerStorage
+            storage $ = _getProtocolSettingManagerStorage();
+
+        IPool.DebtConfiguration memory debtConfiguration = $
+            ._pool
+            .getDebtAssetConfiguration(debtAsset);
+
+        debtConfiguration.borrowCap = borrowCap;
+
+        $._pool.setDebtConfiguration(debtAsset, debtConfiguration);
+    }
+
     function setDebtReserveFactor(
         address debtAsset,
         uint16 reserveFactor
@@ -260,7 +276,10 @@ contract ProtocolSettingManager is
         $._pool.setDebtConfiguration(debtAsset, debtConfiguration);
     }
 
-    function freezeCollateral(address collateralAsset) external restricted {
+    function freezeCollateral(
+        address collateralAsset,
+        bool freeze
+    ) external restricted {
         ProtocolSettingManagerStorage
             storage $ = _getProtocolSettingManagerStorage();
 
@@ -268,7 +287,7 @@ contract ProtocolSettingManager is
             ._pool
             .getCollateralAssetConfiguration(collateralAsset);
 
-        collateralConfiguration.isFrozen = true;
+        collateralConfiguration.isFrozen = freeze;
 
         $._pool.setCollateralConfiguration(
             collateralAsset,
@@ -276,7 +295,7 @@ contract ProtocolSettingManager is
         );
     }
 
-    function freezeDebt(address debtAsset) external restricted {
+    function freezeDebt(address debtAsset, bool freeze) external restricted {
         ProtocolSettingManagerStorage
             storage $ = _getProtocolSettingManagerStorage();
 
@@ -284,12 +303,15 @@ contract ProtocolSettingManager is
             ._pool
             .getDebtAssetConfiguration(debtAsset);
 
-        debtConfiguration.isFrozen = true;
+        debtConfiguration.isFrozen = freeze;
 
         $._pool.setDebtConfiguration(debtAsset, debtConfiguration);
     }
 
-    function pauseCollateral(address collateralAsset) external restricted {
+    function pauseCollateral(
+        address collateralAsset,
+        bool pause
+    ) external restricted {
         ProtocolSettingManagerStorage
             storage $ = _getProtocolSettingManagerStorage();
 
@@ -297,7 +319,7 @@ contract ProtocolSettingManager is
             ._pool
             .getCollateralAssetConfiguration(collateralAsset);
 
-        collateralConfiguration.isPaused = true;
+        collateralConfiguration.isPaused = pause;
 
         $._pool.setCollateralConfiguration(
             collateralAsset,
@@ -305,7 +327,7 @@ contract ProtocolSettingManager is
         );
     }
 
-    function pauseDebt(address debtAsset) external restricted {
+    function pauseDebt(address debtAsset, bool pause) external restricted {
         ProtocolSettingManagerStorage
             storage $ = _getProtocolSettingManagerStorage();
 
@@ -313,65 +335,7 @@ contract ProtocolSettingManager is
             ._pool
             .getDebtAssetConfiguration(debtAsset);
 
-        debtConfiguration.isPaused = true;
-
-        $._pool.setDebtConfiguration(debtAsset, debtConfiguration);
-    }
-
-    function unfreezeCollateral(address collateralAsset) external restricted {
-        ProtocolSettingManagerStorage
-            storage $ = _getProtocolSettingManagerStorage();
-
-        IPool.CollateralConfiguration memory collateralConfiguration = $
-            ._pool
-            .getCollateralAssetConfiguration(collateralAsset);
-
-        collateralConfiguration.isFrozen = false;
-
-        $._pool.setCollateralConfiguration(
-            collateralAsset,
-            collateralConfiguration
-        );
-    }
-
-    function unfreezeDebt(address debtAsset) external restricted {
-        ProtocolSettingManagerStorage
-            storage $ = _getProtocolSettingManagerStorage();
-
-        IPool.DebtConfiguration memory debtConfiguration = $
-            ._pool
-            .getDebtAssetConfiguration(debtAsset);
-
-        debtConfiguration.isFrozen = false;
-
-        $._pool.setDebtConfiguration(debtAsset, debtConfiguration);
-    }
-
-    function unpauseCollateral(address collateralAsset) external restricted {
-        ProtocolSettingManagerStorage
-            storage $ = _getProtocolSettingManagerStorage();
-
-        IPool.CollateralConfiguration memory collateralConfiguration = $
-            ._pool
-            .getCollateralAssetConfiguration(collateralAsset);
-
-        collateralConfiguration.isPaused = false;
-
-        $._pool.setCollateralConfiguration(
-            collateralAsset,
-            collateralConfiguration
-        );
-    }
-
-    function unpauseDebt(address debtAsset) external restricted {
-        ProtocolSettingManagerStorage
-            storage $ = _getProtocolSettingManagerStorage();
-
-        IPool.DebtConfiguration memory debtConfiguration = $
-            ._pool
-            .getDebtAssetConfiguration(debtAsset);
-
-        debtConfiguration.isPaused = false;
+        debtConfiguration.isPaused = pause;
 
         $._pool.setDebtConfiguration(debtAsset, debtConfiguration);
     }

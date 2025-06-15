@@ -14,3 +14,4 @@ address constant WETH_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 address constant INITIAL_ADMIN = address(11);
 address constant POOL_ADMIN = address(12);
 address constant VAULT_ADMIN = address(13);
+address constant SETTING_MANAGER_ADMIN = address(14);

@@ -2,6 +2,8 @@
 pragma solidity ^0.8.30;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {AccessManagedUpgradeable} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import {ERC20PermitUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
@@ -16,6 +18,8 @@ contract ColEUR is
     ERC20PermitUpgradeable,
     UUPSUpgradeable
 {
+    using SafeERC20 for IERC20;
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -44,7 +48,7 @@ contract ColEUR is
         override(ERC20Upgradeable, ERC4626Upgradeable)
         returns (uint8)
     {
-        return super.decimals();
+        return IERC20Metadata(asset()).decimals(); // ColEUR has the same decimals as the underlying asset
     }
 
     function mint(
@@ -76,5 +80,11 @@ contract ColEUR is
     ) public override restricted returns (uint256) {
         return super.withdraw(assets, receiver, owner);
     }
+
     // ColEUR can be transferred freely since they can not be used as collateral to borrow
+
+    // Function used by Pool contract to transfer the underlying token to borrower
+    function transferTokenTo(address to, uint256 amount) external restricted {
+        IERC20(asset()).safeTransfer(to, amount);
+    }
 }

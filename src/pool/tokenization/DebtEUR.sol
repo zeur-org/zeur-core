@@ -60,4 +60,8 @@ contract DebtEUR is
     ) public override returns (bool) {
         revert DebtEUR_OperationNotAllowed();
     }
+
+    function decimals() public view override(ERC20Upgradeable) returns (uint8) {
+        return 6; // DebtEUR has 6 decimals
+    }
 }

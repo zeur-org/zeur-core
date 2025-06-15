@@ -2,9 +2,9 @@
 pragma solidity ^0.8.30;
 
 import {Test, console} from "forge-std/Test.sol";
-import {Pool} from "../../src/pool/Pool.sol";
-import {IPool} from "../../src/interfaces/pool/IPool.sol";
-import {HEALTH_FACTOR_BASE, ETH_ADDRESS, INITIAL_ADMIN, POOL_ADMIN, VAULT_ADMIN, EURC_PRECISION, LINK_PRECISION} from "../../src/helpers/Constants.sol";
+import {Pool} from "../src/pool/Pool.sol";
+import {IPool} from "../src/interfaces/pool/IPool.sol";
+import {HEALTH_FACTOR_BASE, ETH_ADDRESS, INITIAL_ADMIN, POOL_ADMIN, VAULT_ADMIN, SETTING_MANAGER_ADMIN, EURC_PRECISION, LINK_PRECISION} from "../src/helpers/Constants.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
@@ -79,6 +79,7 @@ contract PoolTest is Test {
     address public initialAdmin = INITIAL_ADMIN;
     address public poolAdmin = POOL_ADMIN;
     address public vaultAdmin = VAULT_ADMIN;
+    address public settingManagerAdmin = SETTING_MANAGER_ADMIN;
 
     // Constants
     uint256 public constant INITIAL_ETH_PRICE = 3000e8; // $3000 in 8 decimals
@@ -576,12 +577,14 @@ contract PoolTest is Test {
     }
 
     function test_Borrow() public {
-        // First supply EUR to pool for borrowing
-        vm.prank(alice);
-        pool.supply(address(eurToken), 50000e6, alice);
+        // First supply 50000 EUR to pool for borrowing
+        vm.startPrank(bob);
+        eurToken.approve(address(pool), 50000e6);
+        pool.supply(address(eurToken), 50000e6, bob);
+        vm.stopPrank();
 
         // Supply ETH as collateral
-        uint256 collateralAmount = 2 ether;
+        uint256 collateralAmount = 2 ether; // Deposit 2 ETH = 6000 USD
         vm.prank(alice);
         pool.supply{value: collateralAmount}(
             ETH_ADDRESS,
@@ -684,6 +687,10 @@ contract PoolTest is Test {
     }
 
     function testRevert_WhenSupplyCapExceeded() public {
+        vm.startPrank(settingManagerAdmin);
+        settingManager.setCollateralSupplyCap(ETH_ADDRESS, 10000 ether);
+        vm.stopPrank();
+
         // Try to supply more than supply cap (10000 ETH)
         uint256 excessiveAmount = 15000 ether;
 
@@ -698,12 +705,20 @@ contract PoolTest is Test {
     }
 
     function testRevert_WhenCollateralPaused() public {
+        vm.startPrank(settingManagerAdmin);
+        settingManager.pauseCollateral(ETH_ADDRESS, true);
+        vm.stopPrank();
+
         vm.prank(alice);
         vm.expectRevert(IPool.Pool_CollateralPaused.selector);
         pool.supply{value: 1 ether}(ETH_ADDRESS, 1 ether, alice);
     }
 
     function testRevert_WhenCollateralFrozen() public {
+        vm.startPrank(settingManagerAdmin);
+        settingManager.freezeCollateral(ETH_ADDRESS, true);
+        vm.stopPrank();
+
         vm.prank(alice);
         vm.expectRevert(IPool.Pool_CollateralFrozen.selector);
         pool.supply{value: 1 ether}(ETH_ADDRESS, 1 ether, alice);
@@ -723,20 +738,23 @@ contract PoolTest is Test {
     }
 
     function testRevert_WhenInsufficientHealthFactor() public {
-        // Setup position close to liquidation
-        vm.startPrank(alice);
-        pool.supply(address(eurToken), 50000e6, alice);
-        pool.supply{value: 1 ether}(ETH_ADDRESS, 1 ether, alice);
-
-        // Borrow maximum amount
-        uint256 borrowAmount = 2200e6; // Close to max
-        pool.borrow(address(eurToken), borrowAmount, alice);
+        vm.startPrank(bob);
+        eurToken.approve(address(pool), 10000e6);
+        pool.supply(address(eurToken), 10000e6, bob);
         vm.stopPrank();
 
+        // Setup position close to liquidation
+        vm.startPrank(alice);
+        pool.supply{value: 1 ether}(ETH_ADDRESS, 1 ether, alice);
+        // Borrow maximum amount
+        uint256 borrowAmount = 2200e6; // Deposit 1 ETH = 3000 USD, borrow 2200 EUR = 2376 USD should fail
+        pool.borrow(address(eurToken), borrowAmount, alice);
+        console.log(pool.getUserAccountData(alice).availableBorrowsValue);
+
         // Try to withdraw too much collateral (would break health factor)
-        vm.prank(alice);
         vm.expectRevert(IPool.Pool_InsufficientHealthFactor.selector);
         pool.withdraw(ETH_ADDRESS, 0.8 ether, alice);
+        vm.stopPrank();
     }
 
     function testRevert_WhenUnauthorizedAccess() public {

@@ -5,11 +5,6 @@ pragma solidity ^0.8.30;
 contract MockChainlinkOracleManager {
     mapping(address => uint256) public prices;
 
-    constructor() {
-        // Set default prices (8 decimals, like Chainlink)
-        prices[0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE] = 200000000000; // ETH: $2000
-    }
-
     function getAssetPrice(address asset) external view returns (uint256) {
         return prices[asset];
     }

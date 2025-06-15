@@ -23,14 +23,17 @@ import {VaultETH} from "../pool/vault/VaultETH.sol";
 import {VaultLINK} from "../pool/vault/VaultLINK.sol";
 
 library Roles {
-    uint64 constant POOL_INIT_RESERVE_ROLE = 1;
-    uint64 constant VAULT_SETUP_ROLE = 2;
-    uint64 constant VAULT_LOCK_COLLATERAL_ROLE = 3;
-    uint64 constant MINTER_BURNER_ROLE = 4;
-    uint64 constant ROUTER_SETUP_ROLE = 5;
-    uint64 constant ROUTER_ETH_VAULT_ROLE = 6;
-    uint64 constant ROUTER_LINK_VAULT_ROLE = 7;
+    uint64 constant SETTING_MANAGER_ADMIN_ROLE = 1;
+    uint64 constant POOL_INIT_RESERVE_ROLE = 2;
+    uint64 constant VAULT_SETUP_ROLE = 3;
+    uint64 constant VAULT_LOCK_COLLATERAL_ROLE = 4;
+    uint64 constant MINTER_BURNER_ROLE = 5;
+    uint64 constant ROUTER_SETUP_ROLE = 6;
+    uint64 constant ROUTER_ETH_VAULT_ROLE = 7;
+    uint64 constant ROUTER_LINK_VAULT_ROLE = 8;
 
+    string constant SETTING_MANAGER_ADMIN_ROLE_NAME =
+        "SETTING_MANAGER_ADMIN_ROLE";
     string constant POOL_INIT_RESERVE_ROLE_NAME = "POOL_INIT_RESERVE_ROLE";
     string constant VAULT_SETUP_ROLE_NAME = "VAULT_SETUP_ROLE";
     string constant VAULT_LOCK_COLLATERAL_ROLE_NAME =
@@ -41,10 +44,74 @@ library Roles {
     string constant ROUTER_LINK_VAULT_ROLE_NAME = "ROUTER_LINK_VAULT_ROLE";
 
     function getPoolSelectors() public pure returns (bytes4[] memory) {
-        bytes4[] memory poolSelectors = new bytes4[](2);
+        bytes4[] memory poolSelectors = new bytes4[](4);
         poolSelectors[0] = Pool.initCollateralAsset.selector;
         poolSelectors[1] = Pool.initDebtAsset.selector;
+        poolSelectors[2] = Pool.setCollateralConfiguration.selector;
+        poolSelectors[3] = Pool.setDebtConfiguration.selector;
         return poolSelectors;
+    }
+
+    function getSettingManagerSelectors()
+        public
+        pure
+        returns (bytes4[] memory)
+    {
+        bytes4[] memory settingManagerSelectors = new bytes4[](18);
+        settingManagerSelectors[0] = ProtocolSettingManager
+            .initCollateralAsset
+            .selector;
+        settingManagerSelectors[1] = ProtocolSettingManager
+            .initDebtAsset
+            .selector;
+        settingManagerSelectors[2] = ProtocolSettingManager
+            .setCollateralConfiguration
+            .selector;
+        settingManagerSelectors[3] = ProtocolSettingManager
+            .setCollateralLtv
+            .selector;
+        settingManagerSelectors[4] = ProtocolSettingManager
+            .setCollateralLiquidationThreshold
+            .selector;
+        settingManagerSelectors[5] = ProtocolSettingManager
+            .setCollateralLiquidationBonus
+            .selector;
+        settingManagerSelectors[6] = ProtocolSettingManager
+            .setCollateralLiquidationProtocolFee
+            .selector;
+        settingManagerSelectors[9] = ProtocolSettingManager
+            .setCollateralReserveFactor
+            .selector;
+        settingManagerSelectors[7] = ProtocolSettingManager
+            .setCollateralSupplyCap
+            .selector;
+        settingManagerSelectors[8] = ProtocolSettingManager
+            .setCollateralBorrowCap
+            .selector;
+        settingManagerSelectors[10] = ProtocolSettingManager
+            .setDebtConfiguration
+            .selector;
+        settingManagerSelectors[11] = ProtocolSettingManager
+            .setDebtSupplyCap
+            .selector;
+        settingManagerSelectors[12] = ProtocolSettingManager
+            .setDebtBorrowCap
+            .selector;
+        settingManagerSelectors[13] = ProtocolSettingManager
+            .setDebtReserveFactor
+            .selector;
+        settingManagerSelectors[14] = ProtocolSettingManager
+            .freezeCollateral
+            .selector;
+        settingManagerSelectors[15] = ProtocolSettingManager
+            .freezeDebt
+            .selector;
+        settingManagerSelectors[16] = ProtocolSettingManager
+            .pauseCollateral
+            .selector;
+        settingManagerSelectors[17] = ProtocolSettingManager.pauseDebt.selector;
+
+        return settingManagerSelectors;
     }
 
     function getVaultSetupSelectors() public pure returns (bytes4[] memory) {
@@ -86,11 +153,12 @@ library Roles {
     }
 
     function getMinterColEURSelectors() public pure returns (bytes4[] memory) {
-        bytes4[] memory minterColEURSelectors = new bytes4[](4);
+        bytes4[] memory minterColEURSelectors = new bytes4[](5);
         minterColEURSelectors[0] = ColEUR.mint.selector;
         minterColEURSelectors[1] = ColEUR.redeem.selector;
         minterColEURSelectors[2] = ColEUR.deposit.selector;
         minterColEURSelectors[3] = ColEUR.withdraw.selector;
+        minterColEURSelectors[4] = ColEUR.transferTokenTo.selector;
         return minterColEURSelectors;
     }
 

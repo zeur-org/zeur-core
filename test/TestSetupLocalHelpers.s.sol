@@ -35,6 +35,7 @@ import {Roles} from "../src/helpers/Roles.sol";
 // Mock contracts
 import {MockChainlinkOracleManager, MockERC20, MockPriorityPool, MockWithdrawalQueue, MockMorphoVault, MockWETH, MockRETH, MockRocketDepositPool, MockRocketDAOSettings} from "./TestMockHelpers.sol";
 import {MockLido} from "../src/mock/MockLido.sol";
+import {MockTokenEURC} from "../src/mock/MockTokenEURC.sol";
 
 contract TestSetupLocalHelpers is Script {
     address public initialAdmin = INITIAL_ADMIN;
@@ -71,7 +72,7 @@ contract TestSetupLocalHelpers is Script {
     struct MockContracts {
         MockERC20 linkToken;
         MockERC20 stLinkToken;
-        MockERC20 eurToken;
+        MockTokenEURC eurToken;
         MockWETH wETH;
         MockRETH rETH;
         MockLido stETH;
@@ -139,7 +140,7 @@ contract TestSetupLocalHelpers is Script {
         // Deploy mock tokens
         mockContracts.linkToken = new MockERC20("Chainlink Token", "LINK");
         mockContracts.stLinkToken = new MockERC20("Staked LINK", "stLINK");
-        mockContracts.eurToken = new MockERC20("Euro Token", "EUR");
+        mockContracts.eurToken = new MockTokenEURC("Euro Token", "EUR");
 
         // Deploy mock external protocol contracts
         mockContracts.oracleManager = new MockChainlinkOracleManager();

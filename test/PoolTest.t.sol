@@ -4,7 +4,7 @@ pragma solidity ^0.8.30;
 import {Test, console} from "forge-std/Test.sol";
 import {Pool} from "../../src/pool/Pool.sol";
 import {IPool} from "../../src/interfaces/pool/IPool.sol";
-import {HEALTH_FACTOR_BASE, ETH_ADDRESS, INITIAL_ADMIN, POOL_ADMIN, VAULT_ADMIN} from "../../src/helpers/Constants.sol";
+import {HEALTH_FACTOR_BASE, ETH_ADDRESS, INITIAL_ADMIN, POOL_ADMIN, VAULT_ADMIN, EURC_PRECISION, LINK_PRECISION} from "../../src/helpers/Constants.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
@@ -33,6 +33,10 @@ import {VaultLINK} from "../src/pool/vault/VaultLINK.sol";
 // Mock contracts
 import {MockChainlinkOracleManager, MockERC20, MockPriorityPool, MockWithdrawalQueue, MockMorphoVault, MockWETH, MockRETH, MockRocketDepositPool, MockRocketDAOSettings} from "./TestMockHelpers.sol";
 import {MockLido} from "../src/mock/MockLido.sol";
+import {MockTokenEURC} from "../src/mock/MockTokenEURC.sol";
+
+// Interfaces for testing
+import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 
 contract PoolTest is Test {
     Pool private pool;
@@ -57,7 +61,7 @@ contract PoolTest is Test {
 
     MockERC20 linkToken;
     MockERC20 stLinkToken;
-    MockERC20 eurToken;
+    MockTokenEURC eurToken;
     MockWETH wETH;
     MockRETH rETH;
     MockLido stETH;
@@ -68,7 +72,7 @@ contract PoolTest is Test {
     MockRocketDAOSettings rocketDAOSettings;
     MockChainlinkOracleManager oracleManager;
 
-    // Test users
+    // Test alices
     address public alice = makeAddr("alice");
     address public bob = makeAddr("bob");
     address public liquidator = makeAddr("liquidator");
@@ -157,13 +161,13 @@ contract PoolTest is Test {
         vm.deal(liquidator, 100 ether); // 100 ETH
 
         // Mint EUR and LINK to alice/bob
-        eurToken.mint(alice, 10000e18);
-        eurToken.mint(bob, 10000e18);
-        linkToken.mint(alice, 1000e18);
-        linkToken.mint(bob, 1000e18);
+        eurToken.mint(alice, 1000000 * EURC_PRECISION);
+        eurToken.mint(bob, 1000000 * EURC_PRECISION);
+        linkToken.mint(alice, 1000 * LINK_PRECISION);
+        linkToken.mint(bob, 1000 * LINK_PRECISION);
     }
 
-    function test_Initialize() public {
+    function test_Initialize() public view {
         // Check that pool is properly initialized
         assertEq(pool.getCollateralAssetList().length, 2);
         assertEq(pool.getDebtAssetList().length, 1);
@@ -245,6 +249,57 @@ contract PoolTest is Test {
         assertEq(storedConfig.debtToken, address(debtEUR));
 
         vm.stopPrank();
+    }
+
+    function test_SetCollateralConfiguration() public {
+        IPool.CollateralConfiguration memory newConfig = IPool
+            .CollateralConfiguration({
+                supplyCap: 15000e18, // Changed from 10000e18
+                borrowCap: 12000e18, // Changed from 8000e18
+                colToken: address(colETH),
+                tokenVault: address(ethVault),
+                ltv: 7500, // Changed from 8000
+                liquidationThreshold: 8000, // Changed from 8500
+                liquidationBonus: 600, // Changed from 500
+                liquidationProtocolFee: 1000,
+                reserveFactor: 1000,
+                isFrozen: false,
+                isPaused: false
+            });
+
+        vm.prank(poolAdmin);
+        vm.expectEmit(true, false, false, true);
+        emit IPool.SetCollateralConfiguration(ETH_ADDRESS, newConfig);
+        pool.setCollateralConfiguration(ETH_ADDRESS, newConfig);
+
+        IPool.CollateralConfiguration memory storedConfig = pool
+            .getCollateralAssetConfiguration(ETH_ADDRESS);
+        assertEq(storedConfig.ltv, 7500);
+        assertEq(storedConfig.liquidationThreshold, 8000);
+        assertEq(storedConfig.liquidationBonus, 600);
+        assertEq(storedConfig.supplyCap, 15000e18);
+    }
+
+    function test_SetDebtConfiguration() public {
+        IPool.DebtConfiguration memory newConfig = IPool.DebtConfiguration({
+            supplyCap: 2000000e6, // Changed from 1000000e6
+            borrowCap: 1600000e6, // Changed from 800000e6
+            colToken: address(colEUR),
+            debtToken: address(debtEUR),
+            reserveFactor: 1500, // Changed from 1000
+            isFrozen: false,
+            isPaused: false
+        });
+
+        vm.prank(poolAdmin);
+        vm.expectEmit(true, false, false, true);
+        emit IPool.SetDebtConfiguration(address(eurToken), newConfig);
+        pool.setDebtConfiguration(address(eurToken), newConfig);
+
+        IPool.DebtConfiguration memory storedConfig = pool
+            .getDebtAssetConfiguration(address(eurToken));
+        assertEq(storedConfig.supplyCap, 2000000e6);
+        assertEq(storedConfig.reserveFactor, 1500);
     }
 
     function test_SupplyETHToLido(uint256 supplyAmount) public {
@@ -386,13 +441,26 @@ contract PoolTest is Test {
             "ColETH balance not equal to expected"
         );
 
-        // Check user received ETH
+        // Check alice received ETH
         assertApproxEqAbs(
             alice.balance,
             aliceBalanceBefore + withdrawAmount,
             0.0001 ether,
             "ETH balance not equal to expected"
         );
+    }
+
+    function test_WithdrawETHFromEtherfi(
+        uint256 supplyAmount,
+        uint256 withdrawAmount
+    ) public {
+        vm.assume(supplyAmount >= 1 ether && supplyAmount <= alice.balance);
+        vm.assume(withdrawAmount > 0 && withdrawAmount <= supplyAmount);
+
+        vm.startPrank(vaultAdmin);
+        ethVault.updateCurrentStakingRouter(address(routerETHEtherfi));
+        ethVault.updateCurrentUnstakingRouter(address(routerETHEtherfi));
+        vm.stopPrank();
     }
 
     function test_WithdrawETHFromRocketPool(
@@ -438,7 +506,7 @@ contract PoolTest is Test {
             "ColETH balance not equal to expected"
         );
 
-        // Check user received ETH
+        // Check alice received ETH
         assertApproxEqAbs(
             alice.balance,
             aliceBalanceBefore + withdrawAmount,
@@ -448,400 +516,354 @@ contract PoolTest is Test {
         vm.stopPrank();
     }
 
-    // function test_Borrow() public {
-    //     _setupCollateralAssets();
-    //     _setupDebtAssets();
-
-    //     // First supply EUR to pool for borrowing
-    //     vm.prank(user);
-    //     pool.supply(address(eurToken), 50000e6, user);
-
-    //     // Supply ETH as collateral
-    //     uint256 collateralAmount = 2 ether;
-    //     vm.prank(user);
-    //     pool.supply{value: collateralAmount}(
-    //         ETH_ADDRESS,
-    //         collateralAmount,
-    //         user
-    //     );
-
-    //     // Calculate borrowable amount
-    //     // ETH value: 2 * $3000 = $6000
-    //     // LTV 80%: $4800 borrowable
-    //     // EUR price: $1.08, so max borrow: $4800 / $1.08 = ~4444 EUR
-    //     uint256 borrowAmount = 4000e6; // Borrow 4000 EUR (safe amount)
-
-    //     uint256 userEURBalanceBefore = eurToken.balanceOf(user);
-
-    //     vm.prank(user);
-    //     pool.borrow(address(eurToken), borrowAmount, user);
-
-    //     // Check debt token balance
-    //     assertEq(debtEUR.balanceOf(user), borrowAmount);
-
-    //     // Check user received EUR
-    //     assertEq(eurToken.balanceOf(user), userEURBalanceBefore + borrowAmount);
-    // }
-
-    // function test_Repay() public {
-    //     _setupCollateralAssets();
-    //     _setupDebtAssets();
-
-    //     // Setup: supply EUR and collateral, then borrow
-    //     vm.startPrank(user);
-    //     pool.supply(address(eurToken), 50000e6, user);
-    //     pool.supply{value: 2 ether}(ETH_ADDRESS, 2 ether, user);
-
-    //     uint256 borrowAmount = 4000e6;
-    //     pool.borrow(address(eurToken), borrowAmount, user);
-    //     vm.stopPrank();
-
-    //     // Repay half
-    //     uint256 repayAmount = 2000e6;
-
-    //     vm.prank(user);
-    //     pool.repay(address(eurToken), repayAmount, user);
-
-    //     // Check debt token balance decreased
-    //     assertEq(debtEUR.balanceOf(user), borrowAmount - repayAmount);
-    // }
-
-    // function test_GetUserAccountData() public {
-    //     _setupCollateralAssets();
-    //     _setupDebtAssets();
-
-    //     // Setup user position
-    //     vm.startPrank(user);
-    //     pool.supply(address(eurToken), 50000e6, user);
-    //     pool.supply{value: 2 ether}(ETH_ADDRESS, 2 ether, user);
-    //     pool.supply(address(linkToken), 1000e18, user);
-
-    //     uint256 borrowAmount = 3000e6;
-    //     pool.borrow(address(eurToken), borrowAmount, user);
-    //     vm.stopPrank();
-
-    //     IPool.UserAccountData memory userData = pool.getUserAccountData(user);
-
-    //     // ETH collateral value: 2 ETH * $3000 = $6000 (in 8 decimals: 600000000000)
-    //     // LINK collateral value: 1000 LINK * $20 = $20000 (in 8 decimals: 2000000000000)
-    //     // Total collateral value: $26000 (in 8 decimals: 2600000000000)
-    //     uint256 expectedCollateralValue = 2600000000000;
-    //     assertEq(userData.totalCollateralValue, expectedCollateralValue);
-
-    //     // Debt value: 3000 EUR * $1.08 = $3240 (in 8 decimals: 324000000000)
-    //     uint256 expectedDebtValue = 324000000000;
-    //     assertEq(userData.totalDebtValue, expectedDebtValue);
-
-    //     // Available borrows should be positive
-    //     assertGt(userData.availableBorrowsValue, 0);
-    // }
-
-    // function test_RevertWhenAssetNotAllowed() public {
-    //     MockERC20 invalidToken = new MockERC20("Invalid", "INV", 18);
-
-    //     vm.prank(user);
-    //     vm.expectRevert(
-    //         abi.encodeWithSelector(
-    //             IPool.Pool_AssetNotAllowed.selector,
-    //             address(invalidToken)
-    //         )
-    //     );
-    //     pool.supply(address(invalidToken), 1000e18, user);
-    // }
-
-    // function test_RevertWhenInvalidETHAmount() public {
-    //     _setupCollateralAssets();
-
-    //     vm.prank(user);
-    //     vm.expectRevert(IPool.Pool_InvalidAmount.selector);
-    //     pool.supply{value: 2 ether}(ETH_ADDRESS, 1 ether, user); // msg.value != amount
-    // }
-
-    // function test_RevertWhenSupplyCapExceeded() public {
-    //     _setupCollateralAssets();
-
-    //     // Try to supply more than supply cap (10000 ETH)
-    //     uint256 excessiveAmount = 15000 ether;
-
-    //     vm.deal(user, excessiveAmount);
-    //     vm.prank(user);
-    //     vm.expectRevert(IPool.Pool_SupplyCapExceeded.selector);
-    //     pool.supply{value: excessiveAmount}(ETH_ADDRESS, excessiveAmount, user);
-    // }
-
-    // function test_RevertWhenCollateralPaused() public {
-    //     vm.startPrank(admin);
-
-    //     IPool.CollateralConfiguration memory config = IPool
-    //         .CollateralConfiguration({
-    //             ltv: 8000,
-    //             liquidationThreshold: 8500,
-    //             liquidationBonus: 500,
-    //             supplyCap: 10000e18,
-    //             isFrozen: false,
-    //             isPaused: true, // Paused
-    //             colToken: address(colETH),
-    //             tokenVault: address(ethVault)
-    //         });
-
-    //     pool.initCollateralAsset(ETH_ADDRESS, config);
-    //     vm.stopPrank();
-
-    //     vm.prank(user);
-    //     vm.expectRevert(IPool.Pool_CollateralPaused.selector);
-    //     pool.supply{value: 1 ether}(ETH_ADDRESS, 1 ether, user);
-    // }
-
-    // function test_RevertWhenCollateralFrozen() public {
-    //     vm.startPrank(admin);
-
-    //     IPool.CollateralConfiguration memory config = IPool
-    //         .CollateralConfiguration({
-    //             ltv: 8000,
-    //             liquidationThreshold: 8500,
-    //             liquidationBonus: 500,
-    //             supplyCap: 10000e18,
-    //             isFrozen: true, // Frozen
-    //             isPaused: false,
-    //             colToken: address(colETH),
-    //             tokenVault: address(ethVault)
-    //         });
-
-    //     pool.initCollateralAsset(ETH_ADDRESS, config);
-    //     vm.stopPrank();
-
-    //     vm.prank(user);
-    //     vm.expectRevert(IPool.Pool_CollateralFrozen.selector);
-    //     pool.supply{value: 1 ether}(ETH_ADDRESS, 1 ether, user);
-    // }
-
-    // function test_RevertWhenInsufficientAvailableBorrows() public {
-    //     _setupCollateralAssets();
-    //     _setupDebtAssets();
-
-    //     // Supply small collateral
-    //     vm.prank(user);
-    //     pool.supply{value: 0.1 ether}(ETH_ADDRESS, 0.1 ether, user);
-
-    //     // Try to borrow more than available
-    //     uint256 excessiveBorrowAmount = 10000e6;
-
-    //     vm.prank(user);
-    //     vm.expectRevert(IPool.Pool_InsufficientAvailableBorrowsValue.selector);
-    //     pool.borrow(address(eurToken), excessiveBorrowAmount, user);
-    // }
-
-    // function test_RevertWhenInsufficientHealthFactor() public {
-    //     _setupCollateralAssets();
-    //     _setupDebtAssets();
-
-    //     // Setup position close to liquidation
-    //     vm.startPrank(user);
-    //     pool.supply(address(eurToken), 50000e6, user);
-    //     pool.supply{value: 1 ether}(ETH_ADDRESS, 1 ether, user);
-
-    //     // Borrow maximum amount
-    //     uint256 borrowAmount = 2200e6; // Close to max
-    //     pool.borrow(address(eurToken), borrowAmount, user);
-    //     vm.stopPrank();
-
-    //     // Try to withdraw too much collateral (would break health factor)
-    //     vm.prank(user);
-    //     vm.expectRevert(IPool.Pool_InsufficientHealthFactor.selector);
-    //     pool.withdraw(ETH_ADDRESS, 0.8 ether, user);
-    // }
-
-    // function test_SetCollateralConfiguration() public {
-    //     _setupCollateralAssets();
-
-    //     IPool.CollateralConfiguration memory newConfig = IPool
-    //         .CollateralConfiguration({
-    //             supplyCap: 15000e18, // Changed from 10000e18
-    //             borrowCap: 12000e18, // Changed from 8000e18
-    //             colToken: address(colETH),
-    //             tokenVault: address(ethVault),
-    //             ltv: 7500, // Changed from 8000
-    //             liquidationThreshold: 8000, // Changed from 8500
-    //             liquidationBonus: 600, // Changed from 500
-    //             liquidationProtocolFee: 1000,
-    //             reserveFactor: 1000,
-    //             isFrozen: false,
-    //             isPaused: false
-    //         });
-
-    //     vm.prank(admin);
-    //     vm.expectEmit(true, false, false, true);
-    //     emit IPool.SetCollateralConfiguration(ETH_ADDRESS, newConfig);
-    //     pool.setCollateralConfiguration(ETH_ADDRESS, newConfig);
-
-    //     IPool.CollateralConfiguration memory storedConfig = pool
-    //         .getCollateralAssetConfiguration(ETH_ADDRESS);
-    //     assertEq(storedConfig.ltv, 7500);
-    //     assertEq(storedConfig.liquidationThreshold, 8000);
-    //     assertEq(storedConfig.liquidationBonus, 600);
-    //     assertEq(storedConfig.supplyCap, 15000e18);
-    // }
-
-    // function test_SetDebtConfiguration() public {
-    //     _setupDebtAssets();
-
-    //     IPool.DebtConfiguration memory newConfig = IPool.DebtConfiguration({
-    //         supplyCap: 2000000e6, // Changed from 1000000e6
-    //         colToken: address(colEUR),
-    //         debtToken: address(debtEUR),
-    //         reserveFactor: 1500, // Changed from 1000
-    //         isFrozen: false,
-    //         isPaused: false
-    //     });
-
-    //     vm.prank(admin);
-    //     vm.expectEmit(true, false, false, true);
-    //     emit IPool.SetDebtConfiguration(address(eurToken), newConfig);
-    //     pool.setDebtConfiguration(address(eurToken), newConfig);
-
-    //     IPool.DebtConfiguration memory storedConfig = pool
-    //         .getDebtAssetConfiguration(address(eurToken));
-    //     assertEq(storedConfig.supplyCap, 2000000e6);
-    //     assertEq(storedConfig.reserveFactor, 1500);
-    // }
-
-    // function test_RevertWhenUnauthorizedAccess() public {
-    //     IPool.CollateralConfiguration memory config = IPool
-    //         .CollateralConfiguration({
-    //             ltv: 8000,
-    //             liquidationThreshold: 8500,
-    //             liquidationBonus: 500,
-    //             supplyCap: 10000e18,
-    //             isFrozen: false,
-    //             isPaused: false,
-    //             colToken: address(colETH),
-    //             tokenVault: address(ethVault)
-    //         });
-
-    //     // Try to call restricted function without permission
-    //     vm.prank(user);
-    //     vm.expectRevert();
-    //     pool.initCollateralAsset(ETH_ADDRESS, config);
-    // }
-
-    // function test_RevertWhenAssetAlreadyInitialized() public {
-    //     _setupCollateralAssets();
-
-    //     // Try to initialize ETH again
-    //     IPool.CollateralConfiguration memory config = IPool
-    //         .CollateralConfiguration({
-    //             ltv: 8000,
-    //             liquidationThreshold: 8500,
-    //             liquidationBonus: 500,
-    //             supplyCap: 10000e18,
-    //             isFrozen: false,
-    //             isPaused: false,
-    //             colToken: address(colETH),
-    //             tokenVault: address(ethVault)
-    //         });
-
-    //     vm.prank(admin);
-    //     vm.expectRevert(
-    //         abi.encodeWithSelector(
-    //             IPool.Pool_AssetAlreadyInitialized.selector,
-    //             ETH_ADDRESS
-    //         )
-    //     );
-    //     pool.initCollateralAsset(ETH_ADDRESS, config);
-    // }
-
-    // function test_EmitEvents() public {
-    //     _setupCollateralAssets();
-    //     _setupDebtAssets();
-
-    //     // Test supply event
-    //     vm.prank(user);
-    //     vm.expectEmit(true, true, true, true);
-    //     emit IPool.Supply(ETH_ADDRESS, 1 ether, user, user);
-    //     pool.supply{value: 1 ether}(ETH_ADDRESS, 1 ether, user);
-
-    //     // Test withdraw event
-    //     vm.prank(user);
-    //     vm.expectEmit(true, true, true, true);
-    //     emit IPool.Withdraw(ETH_ADDRESS, 0.5 ether, user, user);
-    //     pool.withdraw(ETH_ADDRESS, 0.5 ether, user);
-
-    //     // Setup for borrow/repay events
-    //     vm.prank(user);
-    //     pool.supply(address(eurToken), 50000e6, user);
-
-    //     // Test borrow event
-    //     vm.prank(user);
-    //     vm.expectEmit(true, true, true, true);
-    //     emit IPool.Borrow(address(eurToken), 1000e6, user, user);
-    //     pool.borrow(address(eurToken), 1000e6, user);
-
-    //     // Test repay event
-    //     vm.prank(user);
-    //     vm.expectEmit(true, true, true, true);
-    //     emit IPool.Repay(address(eurToken), 500e6, user, user);
-    //     pool.repay(address(eurToken), 500e6, user);
-    // }
-
-    // function test_MultipleAssetSupply() public {
-    //     _setupCollateralAssets();
-    //     _setupDebtAssets();
-
-    //     vm.startPrank(user);
-
-    //     // Supply multiple collateral assets
-    //     pool.supply{value: 5 ether}(ETH_ADDRESS, 5 ether, user);
-    //     pool.supply(address(linkToken), 2000e18, user);
-    //     pool.supply(address(eurToken), 10000e6, user);
-
-    //     vm.stopPrank();
-
-    //     // Check balances
-    //     assertEq(colETH.balanceOf(user), 5 ether);
-    //     assertEq(colLINK.balanceOf(user), 2000e18);
-    //     assertEq(colEUR.balanceOf(user), 10000e6);
-
-    //     // Check user account data
-    //     IPool.UserAccountData memory userData = pool.getUserAccountData(user);
-
-    //     // ETH: 5 * $3000 = $15000
-    //     // LINK: 2000 * $20 = $40000
-    //     // Total: $55000 (in 8 decimals: 5500000000000)
-    //     uint256 expectedCollateralValue = 5500000000000;
-    //     assertEq(userData.totalCollateralValue, expectedCollateralValue);
-    // }
-
-    // function test_EdgeCaseZeroSupply() public {
-    //     _setupCollateralAssets();
-
-    //     vm.prank(user);
-    //     vm.expectRevert(IPool.Pool_InvalidAmount.selector);
-    //     pool.supply{value: 0}(ETH_ADDRESS, 0, user);
-    // }
-
-    // function test_EdgeCaseZeroWithdraw() public {
-    //     _setupCollateralAssets();
-
-    //     vm.prank(user);
-    //     vm.expectRevert(IPool.Pool_InvalidAmount.selector);
-    //     pool.withdraw(ETH_ADDRESS, 0, user);
-    // }
-
-    // function test_EdgeCaseZeroBorrow() public {
-    //     _setupDebtAssets();
-
-    //     vm.prank(user);
-    //     vm.expectRevert(IPool.Pool_InvalidAmount.selector);
-    //     pool.borrow(address(eurToken), 0, user);
-    // }
-
-    // function test_EdgeCaseZeroRepay() public {
-    //     _setupDebtAssets();
-
-    //     vm.prank(user);
-    //     vm.expectRevert(IPool.Pool_InvalidAmount.selector);
-    //     pool.repay(address(eurToken), 0, user);
-    // }
-
-    // receive() external payable {}
+    function test_WithdrawETHFromMorpho(
+        uint256 supplyAmount,
+        uint256 withdrawAmount
+    ) public {
+        vm.assume(supplyAmount >= 1 ether && supplyAmount <= alice.balance);
+        vm.assume(withdrawAmount > 0 && withdrawAmount <= supplyAmount);
+
+        vm.startPrank(vaultAdmin);
+        ethVault.updateCurrentStakingRouter(address(routerETHMorpho));
+        ethVault.updateCurrentUnstakingRouter(address(routerETHMorpho));
+        vm.stopPrank();
+    }
+
+    function test_WithdrawLINK(
+        uint256 supplyAmount,
+        uint256 withdrawAmount
+    ) public {
+        vm.assume(
+            supplyAmount >= 1000e18 &&
+                supplyAmount <= linkToken.balanceOf(alice)
+        );
+        vm.assume(withdrawAmount > 0 && withdrawAmount <= supplyAmount);
+
+        vm.startPrank(alice);
+        linkToken.approve(address(pool), supplyAmount);
+        pool.supply(address(linkToken), supplyAmount, alice);
+
+        vm.stopPrank();
+    }
+
+    function test_WithdrawEUR(
+        uint256 supplyAmount,
+        uint256 withdrawAmount
+    ) public {
+        vm.assume(
+            supplyAmount >= 1 * EURC_PRECISION &&
+                supplyAmount <= eurToken.balanceOf(alice)
+        );
+        vm.assume(withdrawAmount > 0 && withdrawAmount <= supplyAmount);
+
+        vm.startPrank(alice);
+        eurToken.approve(address(pool), supplyAmount);
+        pool.supply(address(eurToken), supplyAmount, alice);
+
+        uint256 colEURBalanceBefore = colEUR.balanceOf(alice);
+        uint256 eurTokenBalanceBefore = eurToken.balanceOf(alice);
+
+        colEUR.approve(address(pool), withdrawAmount);
+        pool.withdraw(address(eurToken), withdrawAmount, alice);
+
+        uint256 colEURBalanceAfter = colEUR.balanceOf(alice);
+        uint256 eurTokenBalanceAfter = eurToken.balanceOf(alice);
+
+        assertEq(colEURBalanceAfter, colEURBalanceBefore - withdrawAmount);
+        assertEq(eurTokenBalanceAfter, eurTokenBalanceBefore + withdrawAmount);
+
+        vm.stopPrank();
+    }
+
+    function test_Borrow() public {
+        // First supply EUR to pool for borrowing
+        vm.prank(alice);
+        pool.supply(address(eurToken), 50000e6, alice);
+
+        // Supply ETH as collateral
+        uint256 collateralAmount = 2 ether;
+        vm.prank(alice);
+        pool.supply{value: collateralAmount}(
+            ETH_ADDRESS,
+            collateralAmount,
+            alice
+        );
+
+        // Calculate borrowable amount
+        // ETH value: 2 * $3000 = $6000
+        // LTV 80%: $4800 borrowable
+        // EUR price: $1.08, so max borrow: $4800 / $1.08 = ~4444 EUR
+        uint256 borrowAmount = 4000e6; // Borrow 4000 EUR (safe amount)
+
+        uint256 aliceEURBalanceBefore = eurToken.balanceOf(alice);
+
+        vm.prank(alice);
+        pool.borrow(address(eurToken), borrowAmount, alice);
+
+        // Check debt token balance
+        assertEq(debtEUR.balanceOf(alice), borrowAmount);
+
+        // Check alice received EUR
+        assertEq(
+            eurToken.balanceOf(alice),
+            aliceEURBalanceBefore + borrowAmount
+        );
+    }
+
+    function test_Repay() public {
+        // Setup: supply EUR and collateral, then borrow
+        vm.startPrank(alice);
+        pool.supply(address(eurToken), 50000e6, alice);
+        pool.supply{value: 2 ether}(ETH_ADDRESS, 2 ether, alice);
+
+        uint256 borrowAmount = 4000e6;
+        pool.borrow(address(eurToken), borrowAmount, alice);
+        vm.stopPrank();
+
+        // Repay half
+        uint256 repayAmount = 2000e6;
+
+        vm.prank(alice);
+        pool.repay(address(eurToken), repayAmount, alice);
+
+        // Check debt token balance decreased
+        assertEq(debtEUR.balanceOf(alice), borrowAmount - repayAmount);
+    }
+
+    function test_Liquidate() public {
+        // Setup: supply EUR and collateral, then borrow
+        vm.startPrank(alice);
+        pool.supply(address(eurToken), 50000e6, alice);
+        pool.supply{value: 2 ether}(ETH_ADDRESS, 2 ether, alice);
+    }
+
+    function test_GetUserAccountData() public {
+        // Setup alice position
+        vm.startPrank(alice);
+        pool.supply(address(eurToken), 50000e6, alice);
+        pool.supply{value: 2 ether}(ETH_ADDRESS, 2 ether, alice);
+        pool.supply(address(linkToken), 1000e18, alice);
+
+        uint256 borrowAmount = 3000e6;
+        pool.borrow(address(eurToken), borrowAmount, alice);
+        vm.stopPrank();
+
+        IPool.UserAccountData memory aliceData = pool.getUserAccountData(alice);
+
+        // ETH collateral value: 2 ETH * $3000 = $6000 (in 8 decimals: 600000000000)
+        // LINK collateral value: 1000 LINK * $20 = $20000 (in 8 decimals: 2000000000000)
+        // Total collateral value: $26000 (in 8 decimals: 2600000000000)
+        uint256 expectedCollateralValue = 2600000000000;
+        assertEq(aliceData.totalCollateralValue, expectedCollateralValue);
+
+        // Debt value: 3000 EUR * $1.08 = $3240 (in 8 decimals: 324000000000)
+        uint256 expectedDebtValue = 324000000000;
+        assertEq(aliceData.totalDebtValue, expectedDebtValue);
+
+        // Available borrows should be positive
+        assertGt(aliceData.availableBorrowsValue, 0);
+    }
+
+    function testRevert_WhenAssetNotAllowed() public {
+        MockERC20 invalidToken = new MockERC20("Invalid", "INV");
+
+        vm.prank(alice);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IPool.Pool_AssetNotAllowed.selector,
+                address(invalidToken)
+            )
+        );
+        pool.supply(address(invalidToken), 1000e18, alice);
+    }
+
+    function testRevert_WhenInvalidETHAmount() public {
+        vm.prank(alice);
+        vm.expectRevert(IPool.Pool_InvalidAmount.selector);
+        pool.supply{value: 2 ether}(ETH_ADDRESS, 1 ether, alice); // msg.value != amount
+    }
+
+    function testRevert_WhenSupplyCapExceeded() public {
+        // Try to supply more than supply cap (10000 ETH)
+        uint256 excessiveAmount = 15000 ether;
+
+        vm.deal(alice, excessiveAmount);
+        vm.prank(alice);
+        vm.expectRevert(IPool.Pool_SupplyCapExceeded.selector);
+        pool.supply{value: excessiveAmount}(
+            ETH_ADDRESS,
+            excessiveAmount,
+            alice
+        );
+    }
+
+    function testRevert_WhenCollateralPaused() public {
+        vm.prank(alice);
+        vm.expectRevert(IPool.Pool_CollateralPaused.selector);
+        pool.supply{value: 1 ether}(ETH_ADDRESS, 1 ether, alice);
+    }
+
+    function testRevert_WhenCollateralFrozen() public {
+        vm.prank(alice);
+        vm.expectRevert(IPool.Pool_CollateralFrozen.selector);
+        pool.supply{value: 1 ether}(ETH_ADDRESS, 1 ether, alice);
+    }
+
+    function testRevert_WhenInsufficientAvailableBorrows() public {
+        // Supply small collateral
+        vm.prank(alice);
+        pool.supply{value: 0.1 ether}(ETH_ADDRESS, 0.1 ether, alice);
+
+        // Try to borrow more than available
+        uint256 excessiveBorrowAmount = 10000e6;
+
+        vm.prank(alice);
+        vm.expectRevert(IPool.Pool_InsufficientAvailableBorrowsValue.selector);
+        pool.borrow(address(eurToken), excessiveBorrowAmount, alice);
+    }
+
+    function testRevert_WhenInsufficientHealthFactor() public {
+        // Setup position close to liquidation
+        vm.startPrank(alice);
+        pool.supply(address(eurToken), 50000e6, alice);
+        pool.supply{value: 1 ether}(ETH_ADDRESS, 1 ether, alice);
+
+        // Borrow maximum amount
+        uint256 borrowAmount = 2200e6; // Close to max
+        pool.borrow(address(eurToken), borrowAmount, alice);
+        vm.stopPrank();
+
+        // Try to withdraw too much collateral (would break health factor)
+        vm.prank(alice);
+        vm.expectRevert(IPool.Pool_InsufficientHealthFactor.selector);
+        pool.withdraw(ETH_ADDRESS, 0.8 ether, alice);
+    }
+
+    function testRevert_WhenUnauthorizedAccess() public {
+        IPool.CollateralConfiguration memory config = IPool
+            .CollateralConfiguration({
+                ltv: 8000,
+                liquidationThreshold: 8500,
+                liquidationBonus: 500,
+                supplyCap: 10000e18,
+                borrowCap: 1600000e6,
+                isFrozen: false,
+                isPaused: false,
+                colToken: address(colETH),
+                tokenVault: address(ethVault),
+                liquidationProtocolFee: 1000,
+                reserveFactor: 1000
+            });
+
+        // Try to call restricted function without permission
+        vm.prank(alice);
+        vm.expectRevert(IAccessManaged.AccessManagedUnauthorized.selector);
+        pool.initCollateralAsset(ETH_ADDRESS, config);
+    }
+
+    function testRevert_WhenAssetAlreadyInitialized() public {
+        // Try to initialize ETH again
+        IPool.CollateralConfiguration memory config = IPool
+            .CollateralConfiguration({
+                ltv: 8000,
+                liquidationThreshold: 8500,
+                liquidationBonus: 500,
+                supplyCap: 10000e18,
+                borrowCap: 1600000e6,
+                isFrozen: false,
+                isPaused: false,
+                colToken: address(colETH),
+                tokenVault: address(ethVault),
+                liquidationProtocolFee: 1000,
+                reserveFactor: 1000
+            });
+
+        vm.prank(poolAdmin);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IPool.Pool_AssetAlreadyInitialized.selector,
+                ETH_ADDRESS
+            )
+        );
+        pool.initCollateralAsset(ETH_ADDRESS, config);
+    }
+
+    function test_EmitEvents() public {
+        // Test supply event
+        vm.prank(alice);
+        vm.expectEmit(true, true, true, true);
+        emit IPool.Supply(ETH_ADDRESS, 1 ether, alice, alice);
+        pool.supply{value: 1 ether}(ETH_ADDRESS, 1 ether, alice);
+
+        // Test withdraw event
+        vm.prank(alice);
+        vm.expectEmit(true, true, true, true);
+        emit IPool.Withdraw(ETH_ADDRESS, 0.5 ether, alice, alice);
+        pool.withdraw(ETH_ADDRESS, 0.5 ether, alice);
+
+        // Setup for borrow/repay events
+        vm.prank(alice);
+        pool.supply(address(eurToken), 50000e6, alice);
+
+        // Test borrow event
+        vm.prank(alice);
+        vm.expectEmit(true, true, true, true);
+        emit IPool.Borrow(address(eurToken), 1000e6, alice, alice);
+        pool.borrow(address(eurToken), 1000e6, alice);
+
+        // Test repay event
+        vm.prank(alice);
+        vm.expectEmit(true, true, true, true);
+        emit IPool.Repay(address(eurToken), 500e6, alice, alice);
+        pool.repay(address(eurToken), 500e6, alice);
+    }
+
+    function test_MultipleAssetSupply() public {
+        vm.startPrank(alice);
+
+        // Supply multiple collateral assets
+        pool.supply{value: 5 ether}(ETH_ADDRESS, 5 ether, alice);
+        pool.supply(address(linkToken), 2000e18, alice);
+        pool.supply(address(eurToken), 10000e6, alice);
+
+        vm.stopPrank();
+
+        // Check balances
+        assertEq(colETH.balanceOf(alice), 5 ether);
+        assertEq(colLINK.balanceOf(alice), 2000e18);
+        assertEq(colEUR.balanceOf(alice), 10000e6);
+
+        // Check alice account data
+        IPool.UserAccountData memory aliceData = pool.getUserAccountData(alice);
+
+        // ETH: 5 * $3000 = $15000
+        // LINK: 2000 * $20 = $40000
+        // Total: $55000 (in 8 decimals: 5500000000000)
+        uint256 expectedCollateralValue = 5500000000000;
+        assertEq(aliceData.totalCollateralValue, expectedCollateralValue);
+    }
+
+    function testEdgeCase_ZeroSupply() public {
+        vm.prank(alice);
+        vm.expectRevert(IPool.Pool_InvalidAmount.selector);
+        pool.supply{value: 0}(ETH_ADDRESS, 0, alice);
+    }
+
+    function testEdgeCase_ZeroWithdraw() public {
+        vm.prank(alice);
+        vm.expectRevert(IPool.Pool_InvalidAmount.selector);
+        pool.withdraw(ETH_ADDRESS, 0, alice);
+    }
+
+    function testEdgeCase_ZeroBorrow() public {
+        vm.prank(alice);
+        vm.expectRevert(IPool.Pool_InvalidAmount.selector);
+        pool.borrow(address(eurToken), 0, alice);
+    }
+
+    function testEdgeCase_ZeroRepay() public {
+        vm.prank(alice);
+        vm.expectRevert(IPool.Pool_InvalidAmount.selector);
+        pool.repay(address(eurToken), 0, alice);
+    }
 }

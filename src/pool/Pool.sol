@@ -153,15 +153,28 @@ contract Pool is
 
             // Unlock collateral from vault
             IVault tokenVault = IVault(configuration.tokenVault);
-            if (asset == ETH_ADDRESS) {
-                tokenVault.unlockCollateral(to, amount);
-            } else {
-                // TODO: unlockCollateral for ERC20
-            }
+            tokenVault.unlockCollateral(to, amount); // Unlock process is the same for ETH and LINK
+            // if (asset == ETH_ADDRESS) {
+            //     tokenVault.unlockCollateral(to, amount);
+            // } else {
+            //     // TODO: unlockCollateral for ERC20
+            // }
 
             // Transfer collateral back to user
         } else if ($._debtAssetList.contains(asset)) {
-            // TODO: withdraw from colEUR
+            DebtConfiguration memory configuration = $._debtConfigurations[
+                asset
+            ];
+            _validateDebtAsset(
+                asset,
+                amount,
+                UserAction.Withdraw,
+                configuration
+            );
+
+            // Withdraw from colEUR
+            IColEUR colEUR = IColEUR(configuration.colToken);
+            colEUR.withdraw(amount, to, msg.sender);
         } else {
             revert Pool_AssetNotAllowed(asset);
         }

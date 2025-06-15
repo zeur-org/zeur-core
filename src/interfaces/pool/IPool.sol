@@ -12,6 +12,7 @@ interface IPool {
     error Pool_DebtFrozen();
     error Pool_DebtPaused();
     error Pool_SupplyCapExceeded();
+    error Pool_BorrowCapExceeded();
     error Pool_InsufficientAvailableBorrowsValue();
     error Pool_InsufficientHealthFactor();
 

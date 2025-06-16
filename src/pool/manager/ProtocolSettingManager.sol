@@ -182,7 +182,7 @@ contract ProtocolSettingManager is
 
     function setCollateralSupplyCap(
         address collateralAsset,
-        uint96 supplyCap
+        uint256 supplyCap
     ) external restricted {
         ProtocolSettingManagerStorage
             storage $ = _getProtocolSettingManagerStorage();
@@ -201,7 +201,7 @@ contract ProtocolSettingManager is
 
     function setCollateralBorrowCap(
         address collateralAsset,
-        uint96 borrowCap
+        uint256 borrowCap
     ) external restricted {
         ProtocolSettingManagerStorage
             storage $ = _getProtocolSettingManagerStorage();

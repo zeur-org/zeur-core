@@ -43,12 +43,12 @@ interface IProtocolSettingManager {
 
     function setCollateralSupplyCap(
         address collateralAsset,
-        uint96 supplyCap
+        uint256 supplyCap
     ) external;
 
     function setCollateralBorrowCap(
         address collateralAsset,
-        uint96 borrowCap
+        uint256 borrowCap
     ) external;
 
     function setDebtConfiguration(

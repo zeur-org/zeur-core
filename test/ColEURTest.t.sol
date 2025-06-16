@@ -7,7 +7,6 @@ import {ColEUR} from "../src/pool/tokenization/ColEUR.sol";
 import {INITIAL_ADMIN} from "../src/helpers/Constants.sol";
 import {ProtocolAccessManager} from "../src/pool/manager/ProtocolAccessManager.sol";
 import {TestSetupLocalHelpers} from "./TestSetupLocalHelpers.s.sol";
-import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {MockTokenEURC} from "../src/mock/MockTokenEURC.sol";
 

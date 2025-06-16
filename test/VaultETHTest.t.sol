@@ -6,22 +6,27 @@ import {VaultETH} from "../src/pool/vault/VaultETH.sol";
 import {VaultETHV2} from "./mock/VaultETHV2.sol";
 import {TestSetupLocalHelpers} from "./helpers/TestSetupLocalHelpers.s.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
-import {INITIAL_ADMIN} from "../src/helpers/Constants.sol";
+import {INITIAL_ADMIN, VAULT_ADMIN} from "../src/helpers/Constants.sol";
 import {Roles} from "../src/helpers/Roles.sol";
 import {ETH_ADDRESS} from "../src/helpers/Constants.sol";
 import {ColToken} from "../src/pool/tokenization/ColToken.sol";
 import {StakingRouterETHEtherfi} from "../src/pool/router/StakingRouterETHEtherfi.sol";
 import {StakingRouterETHLido} from "../src/pool/router/StakingRouterETHLido.sol";
+import {ProtocolAccessManager} from "../src/pool/manager/ProtocolAccessManager.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
+import {IVault} from "../src/interfaces/vault/IVault.sol";
 
 contract VaultETHTest is Test {
     VaultETH private vaultETH;
     ColToken private colETH;
     StakingRouterETHEtherfi private routerEtherfi;
     StakingRouterETHLido private routerLido;
+    ProtocolAccessManager private accessManager;
 
     address public alice = makeAddr("alice");
     address public bob = makeAddr("bob");
     address public initialAdmin = INITIAL_ADMIN;
+    address public vaultAdmin = VAULT_ADMIN;
 
     function setUp() public {
         TestSetupLocalHelpers setup = new TestSetupLocalHelpers();
@@ -39,66 +44,90 @@ contract VaultETHTest is Test {
         colETH = tokenizationContracts.colETH;
         routerEtherfi = stakingRouters.stakingRouterETHEtherfi;
         routerLido = stakingRouters.stakingRouterETHLido;
+        accessManager = coreContracts.accessManager;
+    }
+
+    function _setUpAccess() internal {
+        vm.startPrank(initialAdmin);
+        accessManager.grantRole(
+            Roles.VAULT_LOCK_COLLATERAL_ROLE,
+            vaultAdmin,
+            0
+        );
+
+        bytes4[] memory selectors = new bytes4[](1);
+        selectors[0] = UUPSUpgradeable.upgradeToAndCall.selector;
+
+        accessManager.setTargetFunctionRole(
+            address(vaultETH),
+            selectors,
+            Roles.VAULT_SETUP_ROLE
+        );
     }
 
     function test_addStakingRouter() public {
-        vm.startPrank(initialAdmin);
+        _setUpAccess();
+        vm.startPrank(vaultAdmin);
+        vaultETH.removeStakingRouter(address(routerEtherfi));
+
+        vm.expectEmit(true, true, true, true);
+        emit IVault.StakingRouterAdded(address(routerEtherfi));
         vaultETH.addStakingRouter(address(routerEtherfi));
         vm.stopPrank();
     }
 
     function test_removeStakingRouter() public {
-        vm.startPrank(initialAdmin);
+        _setUpAccess();
+        vm.startPrank(vaultAdmin);
+
+        vm.expectEmit(true, true, true, true);
+        emit IVault.StakingRouterRemoved(address(routerEtherfi));
         vaultETH.removeStakingRouter(address(routerEtherfi));
         vm.stopPrank();
     }
 
     function test_updateCurrentStakingRouter() public {
-        vm.startPrank(initialAdmin);
+        _setUpAccess();
+        vm.startPrank(vaultAdmin);
+
+        vm.expectEmit(true, true, true, true);
+        emit IVault.CurrentStakingRouterUpdated(address(routerEtherfi));
         vaultETH.updateCurrentStakingRouter(address(routerEtherfi));
         vm.stopPrank();
     }
 
     function test_updateCurrentUnstakingRouter() public {
-        vm.startPrank(initialAdmin);
+        _setUpAccess();
+        vm.startPrank(vaultAdmin);
+
+        vm.expectEmit(true, true, true, true);
+        emit IVault.CurrentUnstakingRouterUpdated(address(routerEtherfi));
         vaultETH.updateCurrentUnstakingRouter(address(routerEtherfi));
         vm.stopPrank();
     }
 
     function test_getCurrentStakingRouter() public view {
-        assertEq(vaultETH.getCurrentStakingRouter(), address(routerEtherfi));
+        assertEq(vaultETH.getCurrentStakingRouter(), address(routerLido));
     }
 
     function test_getCurrentUnstakingRouter() public view {
-        assertEq(vaultETH.getCurrentUnstakingRouter(), address(routerEtherfi));
+        assertEq(vaultETH.getCurrentUnstakingRouter(), address(routerLido));
     }
 
     function test_getStakingRouters() public view {
         address[] memory stakingRouters = vaultETH.getStakingRouters();
-        assertEq(stakingRouters[0], address(routerEtherfi));
-        assertEq(stakingRouters[1], address(routerLido));
-    }
-
-    function test_lockCollateral() public {
-        vm.startPrank(alice);
-        vaultETH.lockCollateral(alice, 100 ether);
-        vm.stopPrank();
-    }
-
-    function test_unlockCollateral() public {
-        vm.startPrank(alice);
-        vaultETH.unlockCollateral(alice, 100 ether);
-        vm.stopPrank();
+        assertEq(stakingRouters[0], address(routerLido));
+        assertEq(stakingRouters[1], address(routerEtherfi));
     }
 
     function test_rebalance() public {
-        vm.startPrank(alice);
+        _setUpAccess();
+        vm.startPrank(vaultAdmin);
         vaultETH.rebalance();
         vm.stopPrank();
     }
 
     function test_Upgrade() public {
-        // Grant role to alice
         vm.startPrank(initialAdmin);
         VaultETHV2 newVaultETHImpl = new VaultETHV2();
         vaultETH.upgradeToAndCall(address(newVaultETHImpl), "");

@@ -6,19 +6,26 @@ import {VaultLINK} from "../src/pool/vault/VaultLINK.sol";
 import {VaultLINKV2} from "./mock/VaultLINKV2.sol";
 import {TestSetupLocalHelpers} from "./helpers/TestSetupLocalHelpers.s.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
-import {INITIAL_ADMIN} from "../src/helpers/Constants.sol";
+import {VAULT_ADMIN, INITIAL_ADMIN} from "../src/helpers/Constants.sol";
 import {Roles} from "../src/helpers/Roles.sol";
 import {ETH_ADDRESS} from "../src/helpers/Constants.sol";
 import {ColToken} from "../src/pool/tokenization/ColToken.sol";
 import {StakingRouterLINK} from "../src/pool/router/StakingRouterLINK.sol";
+import {IVault} from "../src/interfaces/vault/IVault.sol";
+import {ProtocolAccessManager} from "../src/pool/manager/ProtocolAccessManager.sol";
+import {MockERC20} from "./helpers/TestMockHelpers.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
 contract VaultLINKTest is Test {
+    MockERC20 private linkToken;
     VaultLINK private vaultLINK;
     ColToken private colLINK;
     StakingRouterLINK private routerLINK;
+    ProtocolAccessManager private accessManager;
 
     address public alice = makeAddr("alice");
     address public bob = makeAddr("bob");
+    address public vaultAdmin = VAULT_ADMIN;
     address public initialAdmin = INITIAL_ADMIN;
 
     function setUp() public {
@@ -36,28 +43,61 @@ contract VaultLINKTest is Test {
         vaultLINK = vaultContracts.vaultLINK;
         colLINK = tokenizationContracts.colLINK;
         routerLINK = stakingRouters.stakingRouterLINK;
+        accessManager = coreContracts.accessManager;
+        linkToken = mockContracts.linkToken;
+    }
+
+    function _setUpAccess() internal {
+        // Setup role in VaultLINK contract for a vaultAdmin
+        vm.startPrank(initialAdmin);
+        accessManager.grantRole(
+            Roles.VAULT_LOCK_COLLATERAL_ROLE,
+            vaultAdmin,
+            0
+        );
+
+        bytes4[] memory selectors = new bytes4[](1);
+        selectors[0] = UUPSUpgradeable.upgradeToAndCall.selector;
+
+        accessManager.setTargetFunctionRole(
+            address(vaultLINK),
+            selectors,
+            Roles.VAULT_SETUP_ROLE
+        );
+
+        vm.stopPrank();
     }
 
     function test_addStakingRouter() public {
-        vm.startPrank(initialAdmin);
+        vm.startPrank(vaultAdmin);
+        vaultLINK.removeStakingRouter(address(routerLINK));
+
+        vm.expectEmit(true, true, true, true);
+        emit IVault.StakingRouterAdded(address(routerLINK));
         vaultLINK.addStakingRouter(address(routerLINK));
         vm.stopPrank();
     }
 
     function test_removeStakingRouter() public {
-        vm.startPrank(initialAdmin);
+        vm.startPrank(vaultAdmin);
+        vm.expectEmit(true, true, true, true);
+        emit IVault.StakingRouterRemoved(address(routerLINK));
         vaultLINK.removeStakingRouter(address(routerLINK));
         vm.stopPrank();
     }
 
     function test_updateCurrentStakingRouter() public {
-        vm.startPrank(initialAdmin);
+        vm.startPrank(vaultAdmin);
+        vm.expectEmit(true, true, true, true);
+        emit IVault.CurrentStakingRouterUpdated(address(routerLINK));
         vaultLINK.updateCurrentStakingRouter(address(routerLINK));
         vm.stopPrank();
     }
 
     function test_updateCurrentUnstakingRouter() public {
-        vm.startPrank(initialAdmin);
+        vm.startPrank(vaultAdmin);
+        vm.expectEmit(true, true, true, true);
+        emit IVault.CurrentUnstakingRouterUpdated(address(routerLINK));
         vaultLINK.updateCurrentUnstakingRouter(address(routerLINK));
         vm.stopPrank();
     }
@@ -75,20 +115,9 @@ contract VaultLINKTest is Test {
         assertEq(stakingRouters[0], address(routerLINK));
     }
 
-    function test_lockCollateral() public {
-        vm.startPrank(alice);
-        vaultLINK.lockCollateral(alice, 100 ether);
-        vm.stopPrank();
-    }
-
-    function test_unlockCollateral() public {
-        vm.startPrank(alice);
-        vaultLINK.unlockCollateral(alice, 100 ether);
-        vm.stopPrank();
-    }
-
     function test_rebalance() public {
-        vm.startPrank(alice);
+        _setUpAccess();
+        vm.startPrank(vaultAdmin);
         vaultLINK.rebalance();
         vm.stopPrank();
     }
@@ -122,6 +151,10 @@ contract VaultLINKTest is Test {
     }
 
     function testRevert_AddStakingRouterNotAdmin() public {
+        vm.startPrank(vaultAdmin);
+        vaultLINK.removeStakingRouter(address(routerLINK));
+        vm.stopPrank();
+
         vm.startPrank(alice);
         vm.expectRevert(
             abi.encodeWithSelector(

@@ -62,7 +62,7 @@ contract VaultLINK is
         address newImplementation
     ) internal override restricted {}
 
-    function addStakingRouter(address router) external {
+    function addStakingRouter(address router) external restricted {
         VaultLINKStorage storage $ = _getVaultLINKStorage();
 
         if ($._stakingRouters.contains(router))
@@ -72,7 +72,7 @@ contract VaultLINK is
         emit StakingRouterAdded(router);
     }
 
-    function removeStakingRouter(address router) external {
+    function removeStakingRouter(address router) external restricted {
         VaultLINKStorage storage $ = _getVaultLINKStorage();
 
         if (!$._stakingRouters.contains(router))
@@ -82,7 +82,7 @@ contract VaultLINK is
         emit StakingRouterRemoved(router);
     }
 
-    function updateCurrentStakingRouter(address router) external {
+    function updateCurrentStakingRouter(address router) external restricted {
         VaultLINKStorage storage $ = _getVaultLINKStorage();
         if (!$._stakingRouters.contains(router))
             revert Vault_InvalidStakingRouter(router);
@@ -91,7 +91,7 @@ contract VaultLINK is
         emit CurrentStakingRouterUpdated(router);
     }
 
-    function updateCurrentUnstakingRouter(address router) external {
+    function updateCurrentUnstakingRouter(address router) external restricted {
         VaultLINKStorage storage $ = _getVaultLINKStorage();
 
         if (!$._stakingRouters.contains(router))
@@ -116,7 +116,10 @@ contract VaultLINK is
         return $._stakingRouters.values();
     }
 
-    function lockCollateral(address from, uint256 amount) external payable {
+    function lockCollateral(
+        address from,
+        uint256 amount
+    ) external payable restricted {
         VaultLINKStorage storage $ = _getVaultLINKStorage();
 
         IStakingRouter stakingRouter = $._currentStakingRouter;
@@ -124,7 +127,7 @@ contract VaultLINK is
         stakingRouter.stake(from, amount);
     }
 
-    function unlockCollateral(address to, uint256 amount) external {
+    function unlockCollateral(address to, uint256 amount) external restricted {
         VaultLINKStorage storage $ = _getVaultLINKStorage();
 
         IStakingRouter unstakingRouter = $._currentUnstakingRouter;
@@ -135,5 +138,5 @@ contract VaultLINK is
         unstakingRouter.unstake(to, amount);
     }
 
-    function rebalance() external {}
+    function rebalance() external restricted {}
 }

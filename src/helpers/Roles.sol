@@ -115,17 +115,19 @@ library Roles {
     }
 
     function getVaultSetupSelectors() public pure returns (bytes4[] memory) {
-        bytes4[] memory vaultSetupSelectors = new bytes4[](8);
+        bytes4[] memory vaultSetupSelectors = new bytes4[](11);
         vaultSetupSelectors[0] = VaultETH.addStakingRouter.selector;
         vaultSetupSelectors[1] = VaultETH.removeStakingRouter.selector;
         vaultSetupSelectors[2] = VaultETH.updateCurrentStakingRouter.selector;
         vaultSetupSelectors[3] = VaultETH.updateCurrentUnstakingRouter.selector;
-        vaultSetupSelectors[4] = VaultLINK.addStakingRouter.selector;
-        vaultSetupSelectors[5] = VaultLINK.removeStakingRouter.selector;
-        vaultSetupSelectors[6] = VaultLINK.updateCurrentStakingRouter.selector;
-        vaultSetupSelectors[7] = VaultLINK
+        vaultSetupSelectors[4] = VaultETH.rebalance.selector;
+        vaultSetupSelectors[5] = VaultLINK.addStakingRouter.selector;
+        vaultSetupSelectors[6] = VaultLINK.removeStakingRouter.selector;
+        vaultSetupSelectors[7] = VaultLINK.updateCurrentStakingRouter.selector;
+        vaultSetupSelectors[9] = VaultLINK
             .updateCurrentUnstakingRouter
             .selector;
+        vaultSetupSelectors[10] = VaultLINK.rebalance.selector;
         return vaultSetupSelectors;
     }
 

@@ -775,7 +775,12 @@ contract PoolTest is Test {
 
         // Try to call restricted function without permission
         vm.prank(alice);
-        vm.expectRevert(IAccessManaged.AccessManagedUnauthorized.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessManaged.AccessManagedUnauthorized.selector,
+                alice
+            )
+        );
         pool.initCollateralAsset(ETH_ADDRESS, config);
     }
 

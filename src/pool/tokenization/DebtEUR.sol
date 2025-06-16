@@ -39,6 +39,7 @@ contract DebtEUR is
         _burn(account, value);
     }
 
+    // Users can not transfer debt token to other address
     function transfer(
         address to,
         uint256 amount
@@ -61,7 +62,7 @@ contract DebtEUR is
         revert DebtEUR_OperationNotAllowed();
     }
 
-    function decimals() public view override(ERC20Upgradeable) returns (uint8) {
+    function decimals() public pure override(ERC20Upgradeable) returns (uint8) {
         return 6; // DebtEUR has 6 decimals
     }
 }

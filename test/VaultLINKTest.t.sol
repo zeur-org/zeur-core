@@ -4,16 +4,18 @@ pragma solidity ^0.8.30;
 import {Test, console} from "forge-std/Test.sol";
 import {VaultLINK} from "../src/pool/vault/VaultLINK.sol";
 import {VaultLINKV2} from "./mock/VaultLINKV2.sol";
-import {TestSetupLocalHelpers} from "./TestSetupLocalHelpers.s.sol";
+import {TestSetupLocalHelpers} from "./helpers/TestSetupLocalHelpers.s.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {INITIAL_ADMIN} from "../src/helpers/Constants.sol";
 import {Roles} from "../src/helpers/Roles.sol";
 import {ETH_ADDRESS} from "../src/helpers/Constants.sol";
 import {ColToken} from "../src/pool/tokenization/ColToken.sol";
+import {StakingRouterLINK} from "../src/pool/router/StakingRouterLINK.sol";
 
 contract VaultLINKTest is Test {
     VaultLINK private vaultLINK;
     ColToken private colLINK;
+    StakingRouterLINK private routerLINK;
 
     address public alice = makeAddr("alice");
     address public bob = makeAddr("bob");
@@ -33,60 +35,44 @@ contract VaultLINKTest is Test {
 
         vaultLINK = vaultContracts.vaultLINK;
         colLINK = tokenizationContracts.colLINK;
-        stakingRouter = stakingRouters.stakingRouterLINK;
+        routerLINK = stakingRouters.stakingRouterLINK;
     }
 
     function test_addStakingRouter() public {
         vm.startPrank(initialAdmin);
-        vaultLINK.addStakingRouter(address(stakingRouters.stakingRouterLINK));
+        vaultLINK.addStakingRouter(address(routerLINK));
         vm.stopPrank();
     }
 
     function test_removeStakingRouter() public {
         vm.startPrank(initialAdmin);
-        vaultLINK.removeStakingRouter(
-            address(stakingRouters.stakingRouterLINK)
-        );
+        vaultLINK.removeStakingRouter(address(routerLINK));
         vm.stopPrank();
     }
 
     function test_updateCurrentStakingRouter() public {
         vm.startPrank(initialAdmin);
-        vaultLINK.updateCurrentStakingRouter(
-            address(stakingRouters.stakingRouterLINK)
-        );
+        vaultLINK.updateCurrentStakingRouter(address(routerLINK));
         vm.stopPrank();
     }
 
     function test_updateCurrentUnstakingRouter() public {
         vm.startPrank(initialAdmin);
-        vaultLINK.updateCurrentUnstakingRouter(
-            address(stakingRouters.stakingRouterLINK)
-        );
+        vaultLINK.updateCurrentUnstakingRouter(address(routerLINK));
         vm.stopPrank();
     }
 
     function test_getCurrentStakingRouter() public view {
-        assertEq(
-            vaultLINK.getCurrentStakingRouter(),
-            address(stakingRouters.stakingRouterLINK)
-        );
+        assertEq(vaultLINK.getCurrentStakingRouter(), address(routerLINK));
     }
 
     function test_getCurrentUnstakingRouter() public view {
-        assertEq(
-            vaultLINK.getCurrentUnstakingRouter(),
-            address(stakingRouters.stakingRouterLINK)
-        );
+        assertEq(vaultLINK.getCurrentUnstakingRouter(), address(routerLINK));
     }
 
     function test_getStakingRouter() public view {
-        assertEq(
-            vaultLINK.getStakingRouter(
-                address(stakingRouters.stakingRouterLINK)
-            ),
-            address(stakingRouters.stakingRouterLINK)
-        );
+        address[] memory stakingRouters = vaultLINK.getStakingRouters();
+        assertEq(stakingRouters[0], address(routerLINK));
     }
 
     function test_lockCollateral() public {
@@ -103,7 +89,7 @@ contract VaultLINKTest is Test {
 
     function test_rebalance() public {
         vm.startPrank(alice);
-        vaultLINK.rebalance(alice, 100 ether);
+        vaultLINK.rebalance();
         vm.stopPrank();
     }
 
@@ -143,7 +129,7 @@ contract VaultLINKTest is Test {
                 alice
             )
         );
-        vaultLINK.addStakingRouter(address(stakingRouters.stakingRouterLINK));
+        vaultLINK.addStakingRouter(address(routerLINK));
         vm.stopPrank();
     }
 
@@ -155,9 +141,7 @@ contract VaultLINKTest is Test {
                 alice
             )
         );
-        vaultLINK.removeStakingRouter(
-            address(stakingRouters.stakingRouterLINK)
-        );
+        vaultLINK.removeStakingRouter(address(routerLINK));
         vm.stopPrank();
     }
 
@@ -169,9 +153,7 @@ contract VaultLINKTest is Test {
                 alice
             )
         );
-        vaultLINK.updateCurrentStakingRouter(
-            address(stakingRouters.stakingRouterLINK)
-        );
+        vaultLINK.updateCurrentStakingRouter(address(routerLINK));
         vm.stopPrank();
     }
 
@@ -183,9 +165,7 @@ contract VaultLINKTest is Test {
                 alice
             )
         );
-        vaultLINK.updateCurrentUnstakingRouter(
-            address(stakingRouters.stakingRouterLINK)
-        );
+        vaultLINK.updateCurrentUnstakingRouter(address(routerLINK));
         vm.stopPrank();
     }
 
@@ -221,7 +201,7 @@ contract VaultLINKTest is Test {
                 alice
             )
         );
-        vaultLINK.rebalance(alice, 100 ether);
+        vaultLINK.rebalance();
         vm.stopPrank();
     }
 }

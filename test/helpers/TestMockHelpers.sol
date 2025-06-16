@@ -39,11 +39,7 @@ contract MockERC20 {
         return true;
     }
 
-    function transferFrom(
-        address from,
-        address to,
-        uint256 amount
-    ) external returns (bool) {
+    function transferFrom(address from, address to, uint256 amount) external returns (bool) {
         allowance[from][msg.sender] -= amount;
         balanceOf[from] -= amount;
         balanceOf[to] += amount;
@@ -57,11 +53,7 @@ contract MockERC20 {
 }
 
 contract MockPriorityPool {
-    function deposit(
-        uint256 amount,
-        bool shouldQueue,
-        bytes[] calldata data
-    ) external {}
+    function deposit(uint256 amount, bool shouldQueue, bytes[] calldata data) external {}
 
     function withdraw(
         uint256 amount,
@@ -75,10 +67,7 @@ contract MockPriorityPool {
 }
 
 contract MockWithdrawalQueue {
-    function requestWithdrawals(
-        uint256[] calldata amounts,
-        address owner
-    ) external returns (uint256[] memory) {
+    function requestWithdrawals(uint256[] calldata amounts, address owner) external returns (uint256[] memory) {
         uint256[] memory requestIds = new uint256[](amounts.length);
         for (uint256 i = 0; i < amounts.length; i++) {
             requestIds[i] = i + 1;
@@ -106,18 +95,11 @@ contract MockMorphoVault {
         asset = _asset;
     }
 
-    function deposit(
-        uint256 assets,
-        address receiver
-    ) external returns (uint256) {
+    function deposit(uint256 assets, address receiver) external returns (uint256) {
         return assets; // 1:1 for simplicity
     }
 
-    function withdraw(
-        uint256 assets,
-        address receiver,
-        address owner
-    ) external returns (uint256) {
+    function withdraw(uint256 assets, address receiver, address owner) external returns (uint256) {
         return assets;
     }
 
@@ -125,11 +107,7 @@ contract MockMorphoVault {
         return true;
     }
 
-    function transferFrom(
-        address from,
-        address to,
-        uint256 amount
-    ) external returns (bool) {
+    function transferFrom(address from, address to, uint256 amount) external returns (bool) {
         return true;
     }
 
@@ -153,11 +131,7 @@ contract MockRETH {
 
     function burn(uint256 amount) external {}
 
-    function transferFrom(
-        address from,
-        address to,
-        uint256 amount
-    ) external returns (bool) {
+    function transferFrom(address from, address to, uint256 amount) external returns (bool) {
         return true;
     }
 }

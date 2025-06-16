@@ -8,7 +8,7 @@ import {HEALTH_FACTOR_BASE, ETH_ADDRESS, INITIAL_ADMIN, POOL_ADMIN, VAULT_ADMIN,
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import {TestSetupLocalHelpers} from "./TestSetupLocalHelpers.s.sol";
+import {TestSetupLocalHelpers} from "./helpers/TestSetupLocalHelpers.s.sol";
 
 // Core contracts
 import {Pool} from "../src/pool/Pool.sol";
@@ -31,7 +31,7 @@ import {DebtEUR} from "../src/pool/tokenization/DebtEUR.sol";
 import {VaultETH} from "../src/pool/vault/VaultETH.sol";
 import {VaultLINK} from "../src/pool/vault/VaultLINK.sol";
 // Mock contracts
-import {MockChainlinkOracleManager, MockERC20, MockPriorityPool, MockWithdrawalQueue, MockMorphoVault, MockWETH, MockRETH, MockRocketDepositPool, MockRocketDAOSettings} from "./TestMockHelpers.sol";
+import {MockChainlinkOracleManager, MockERC20, MockPriorityPool, MockWithdrawalQueue, MockMorphoVault, MockWETH, MockRETH, MockRocketDepositPool, MockRocketDAOSettings} from "./helpers/TestMockHelpers.sol";
 import {MockLido} from "../src/mock/MockLido.sol";
 import {MockTokenEURC} from "../src/mock/MockTokenEURC.sol";
 

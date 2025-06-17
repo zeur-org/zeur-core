@@ -127,6 +127,8 @@ interface IPool {
         DebtConfiguration debtConfiguration
     );
 
+    event SetChainlinkOracleManager(address indexed oracleManager);
+
     function supply(
         address asset,
         uint256 amount,

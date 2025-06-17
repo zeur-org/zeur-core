@@ -7,6 +7,12 @@ via_ir = false
 optimizer = true
 optimizer_runs = 100_000
 
+# Required for OZ Foundry upgrades
+ffi = true
+ast = true
+build_info = true
+extra_output = ["storageLayout"]
+
 # Remappings
 remappings = [
 	    "forge-std=lib/forge-std/src",
@@ -17,3 +23,11 @@ remappings = [
 ]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+
+[etherscan]
+mainnet = { key = "${ETHERSCAN_API_KEY}" }
+sepolia = { key = "${ETHERSCAN_API_KEY}" }
+
+[rpc_endpoints]
+mainnet = "${MAINNET_RPC_URL}"
+sepolia = "${SEPOLIA_RPC_URL}"

@@ -59,9 +59,12 @@ contract Pool is
     ) public initializer {
         __AccessManaged_init(initialAuthority);
         __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
 
         PoolStorage storage $ = _getPoolStorage();
         $._oracleManager = IChainlinkOracleManager(oracleManager);
+
+        emit SetChainlinkOracleManager(oracleManager);
     }
 
     function _authorizeUpgrade(
@@ -102,7 +105,7 @@ contract Pool is
                 // Transfer the asset from the user to the pool
                 // Call lockCollateral to trigger staking function in vault
                 IERC20(asset).safeTransferFrom(
-                    from,
+                    msg.sender,
                     address(tokenVault),
                     amount
                 );
@@ -118,7 +121,7 @@ contract Pool is
             ];
             _validateDebtAsset(asset, amount, UserAction.Supply, configuration);
 
-            assetToken.safeTransferFrom(from, address(this), amount);
+            assetToken.safeTransferFrom(msg.sender, address(this), amount);
             assetToken.forceApprove(configuration.colToken, amount);
 
             // Deposit EUR to ERC4626 colEUR => mint directly shares to from address
@@ -127,6 +130,8 @@ contract Pool is
         } else {
             revert Pool_AssetNotAllowed(asset);
         }
+
+        emit Supply(asset, amount, from, msg.sender);
     }
 
     function withdraw(
@@ -223,6 +228,8 @@ contract Pool is
         // Transfer EUR from colEUR to "to" address
         IColEUR colEUR = IColEUR(configuration.colToken);
         colEUR.transferTokenTo(to, amount);
+
+        emit Borrow(asset, amount, to, msg.sender);
     }
 
     function repay(

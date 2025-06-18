@@ -49,8 +49,8 @@ contract StakingRouterETHMorpho is
 
     function initialize(
         address initialAuthority,
-        address morphoVault,
-        address wETH
+        address wETH,
+        address morphoVault
     ) public initializer {
         __AccessManaged_init(initialAuthority);
         __UUPSUpgradeable_init();
@@ -58,8 +58,8 @@ contract StakingRouterETHMorpho is
         StakingRouterETHMorphoStorage
             storage $ = _getStakingRouterETHMorphoStorage();
 
-        $._morphoVault = IMorphoVault(morphoVault);
         $._wETH = IWETH(wETH);
+        $._morphoVault = IMorphoVault(morphoVault);
     }
 
     function _authorizeUpgrade(
@@ -76,10 +76,12 @@ contract StakingRouterETHMorpho is
 
         // Approve and deposit WETH into Morpho Vault
         $._wETH.approve(address($._morphoVault), amount);
+
+        // Deposit WETH into Morpho Vault on behalf of VaultETH
         uint256 shares = $._morphoVault.deposit(amount, from);
 
-        // Transfer shares back to Zeur VaultETH contract
-        $._morphoVault.safeTransfer(from, shares);
+        // No need to transfer shares back to Zeur VaultETH contract
+        // $._morphoVault.safeTransfer(from, shares);
     }
 
     function unstake(address to, uint256 amount) external restricted {
@@ -91,7 +93,7 @@ contract StakingRouterETHMorpho is
         $._morphoVault.forceApprove(address($._morphoVault), amount);
 
         // Withdraw WETH from Morpho Vault
-        $._morphoVault.withdraw(amount, to, address(this));
+        $._morphoVault.withdraw(amount, address(this), address(this));
 
         // Unwrap WETH into ETH
         $._wETH.withdraw(amount);
@@ -134,4 +136,6 @@ contract StakingRouterETHMorpho is
 
         return (address($._morphoVault), 1e18); // TODO: exchange rate from ERC4626
     }
+
+    receive() external payable {}
 }

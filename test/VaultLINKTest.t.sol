@@ -3,7 +3,7 @@ pragma solidity ^0.8.30;
 
 import {Test, console} from "forge-std/Test.sol";
 import {VaultLINK} from "../src/pool/vault/VaultLINK.sol";
-import {VaultLINKV2} from "./mock/VaultLINKV2.sol";
+import {VaultLINKV2} from "./mock-v2/VaultLINKV2.sol";
 import {TestSetupLocalHelpers} from "./helpers/TestSetupLocalHelpers.s.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {VAULT_ADMIN, INITIAL_ADMIN} from "../src/helpers/Constants.sol";

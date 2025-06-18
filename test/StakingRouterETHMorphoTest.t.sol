@@ -3,7 +3,7 @@ pragma solidity ^0.8.30;
 
 import {Test, console} from "forge-std/Test.sol";
 import {StakingRouterETHMorpho} from "../src/pool/router/StakingRouterETHMorpho.sol";
-import {StakingRouterETHMorphoV2} from "./mock/StakingRouterETHMorphoV2.sol";
+import {StakingRouterETHMorphoV2} from "./mock-v2/StakingRouterETHMorphoV2.sol";
 import {TestSetupLocalHelpers} from "./helpers/TestSetupLocalHelpers.s.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {INITIAL_ADMIN} from "../src/helpers/Constants.sol";
@@ -77,7 +77,7 @@ contract StakingRouterETHMorphoTest is Test {
         stakingRouter.upgradeToAndCall(address(newStakingRouterImpl), "");
 
         StakingRouterETHMorphoV2 newStakingRouter = StakingRouterETHMorphoV2(
-            address(stakingRouter)
+            payable(address(stakingRouter))
         );
         assertEq(newStakingRouter.getVersion(), 2);
 

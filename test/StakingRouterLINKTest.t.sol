@@ -3,7 +3,7 @@ pragma solidity ^0.8.30;
 
 import {Test, console} from "forge-std/Test.sol";
 import {StakingRouterLINK} from "../src/pool/router/StakingRouterLINK.sol";
-import {StakingRouterLINKV2} from "./mock/StakingRouterLINKV2.sol";
+import {StakingRouterLINKV2} from "./mock-v2/StakingRouterLINKV2.sol";
 import {TestSetupLocalHelpers} from "./helpers/TestSetupLocalHelpers.s.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {INITIAL_ADMIN} from "../src/helpers/Constants.sol";

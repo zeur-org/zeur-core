@@ -3,7 +3,7 @@ pragma solidity ^0.8.30;
 
 import {Test, console} from "forge-std/Test.sol";
 import {StakingRouterETHRocketPool} from "../src/pool/router/StakingRouterETHRocketPool.sol";
-import {StakingRouterETHRocketPoolV2} from "./mock/StakingRouterETHRocketPoolV2.sol";
+import {StakingRouterETHRocketPoolV2} from "./mock-v2/StakingRouterETHRocketPoolV2.sol";
 import {TestSetupLocalHelpers} from "./helpers/TestSetupLocalHelpers.s.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {INITIAL_ADMIN} from "../src/helpers/Constants.sol";

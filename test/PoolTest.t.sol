@@ -31,7 +31,8 @@ import {DebtEUR} from "../src/pool/tokenization/DebtEUR.sol";
 import {VaultETH} from "../src/pool/vault/VaultETH.sol";
 import {VaultLINK} from "../src/pool/vault/VaultLINK.sol";
 // Mock contracts
-import {MockChainlinkOracleManager, MockERC20, MockPriorityPool, MockWithdrawalQueue, MockMorphoVault, MockWETH, MockRETH, MockRocketDepositPool, MockRocketDAOSettings} from "./helpers/TestMockHelpers.sol";
+import {MockChainlinkOracleManager, MockERC20, MockPriorityPool, MockWithdrawalQueue, MockWETH, MockRETH, MockRocketDepositPool, MockRocketDAOSettings} from "./helpers/TestMockHelpers.sol";
+import {MockMorpho} from "../src/mock/MockMorpho.sol";
 import {MockLido} from "../src/mock/MockLido.sol";
 import {MockTokenEURC} from "../src/mock/MockTokenEURC.sol";
 
@@ -67,7 +68,7 @@ contract PoolTest is Test {
     MockLido stETH;
     MockPriorityPool linkPriorityPool;
     MockWithdrawalQueue withdrawalQueue;
-    MockMorphoVault morphoVault;
+    MockMorpho morphoVault;
     MockRocketDepositPool rocketDepositPool;
     MockRocketDAOSettings rocketDAOSettings;
     MockChainlinkOracleManager oracleManager;
@@ -166,6 +167,11 @@ contract PoolTest is Test {
         eurToken.mint(bob, 1000000 * EURC_PRECISION);
         linkToken.mint(alice, 1000 * LINK_PRECISION);
         linkToken.mint(bob, 1000 * LINK_PRECISION);
+
+        // Label
+        vm.label(address(routerETHMorpho), "routerETHMorpho");
+        vm.label(address(morphoVault), "morphoVault");
+        vm.label(address(wETH), "wETH");
     }
 
     function test_Initialize() public view {
@@ -442,6 +448,8 @@ contract PoolTest is Test {
             "ColETH balance not equal to expected"
         );
 
+        console.log("alice.balance after withdraw:", alice.balance);
+
         // Check alice received ETH
         assertApproxEqAbs(
             alice.balance,
@@ -527,6 +535,46 @@ contract PoolTest is Test {
         vm.startPrank(vaultAdmin);
         ethVault.updateCurrentStakingRouter(address(routerETHMorpho));
         ethVault.updateCurrentUnstakingRouter(address(routerETHMorpho));
+        vm.stopPrank();
+
+        // First supply
+        vm.startPrank(alice);
+        pool.supply{value: supplyAmount}(ETH_ADDRESS, supplyAmount, alice);
+
+        uint256 aliceBalanceBefore = alice.balance;
+        console.log("Supply amount:", supplyAmount);
+        console.log("Withdraw amount:", withdrawAmount);
+        console.log("ETH balance before withdraw:", alice.balance);
+        console.log("ColETH balance before withdraw:", colETH.balanceOf(alice));
+
+        // Then withdraw
+        pool.withdraw(ETH_ADDRESS, withdrawAmount, alice);
+
+        console.log("ETH balance after withdraw:", alice.balance);
+        console.log("ColETH balance after withdraw:", colETH.balanceOf(alice));
+        console.log(
+            "ETH balance of vaultETH after withdraw:",
+            address(ethVault).balance
+        );
+        console.log(
+            "ETH balance of routerMorpho after withdraw:",
+            address(routerETHMorpho).balance
+        );
+
+        // Check colETH balance decreased
+        assertEq(
+            colETH.balanceOf(alice),
+            supplyAmount - withdrawAmount,
+            "ColETH balance not equal to expected"
+        );
+
+        // Check alice received ETH
+        assertApproxEqAbs(
+            alice.balance,
+            aliceBalanceBefore + withdrawAmount,
+            0.0001 ether,
+            "ETH balance not equal to expected"
+        );
         vm.stopPrank();
     }
 

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
 // Mock contracts for testing
 contract MockChainlinkOracleManager {
     mapping(address => uint256) public prices;
@@ -39,7 +41,11 @@ contract MockERC20 {
         return true;
     }
 
-    function transferFrom(address from, address to, uint256 amount) external returns (bool) {
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) external returns (bool) {
         allowance[from][msg.sender] -= amount;
         balanceOf[from] -= amount;
         balanceOf[to] += amount;
@@ -52,8 +58,13 @@ contract MockERC20 {
     }
 }
 
+/************************************** Mock contracts for LST platforms *******************************************/
 contract MockPriorityPool {
-    function deposit(uint256 amount, bool shouldQueue, bytes[] calldata data) external {}
+    function deposit(
+        uint256 amount,
+        bool shouldQueue,
+        bytes[] calldata data
+    ) external {}
 
     function withdraw(
         uint256 amount,
@@ -67,7 +78,10 @@ contract MockPriorityPool {
 }
 
 contract MockWithdrawalQueue {
-    function requestWithdrawals(uint256[] calldata amounts, address owner) external returns (uint256[] memory) {
+    function requestWithdrawals(
+        uint256[] calldata amounts,
+        address owner
+    ) external returns (uint256[] memory) {
         uint256[] memory requestIds = new uint256[](amounts.length);
         for (uint256 i = 0; i < amounts.length; i++) {
             requestIds[i] = i + 1;
@@ -78,41 +92,49 @@ contract MockWithdrawalQueue {
     function claimWithdrawal(uint256 requestId) external {}
 }
 
-contract MockWETH {
-    function deposit() external payable {}
+/************************************** Mock contracts for WETH *******************************************/
 
-    function withdraw(uint256 amount) external {}
+/**
+ * @title MockWETH
+ * @dev Simplified Wrapped Ether (WETH) mock for testing Morpho WETH vaults.
+ *      Allows deposit of ETH to mint WETH, withdrawal of WETH for ETH,
+ *      and an owner-only faucet for arbitrary minting during tests.
+ */
+contract MockWETH is ERC20 {
+    constructor() ERC20("Mock Wrapped Ether", "WETH") {}
 
-    function approve(address spender, uint256 amount) external returns (bool) {
-        return true;
-    }
-}
-
-contract MockMorphoVault {
-    address public immutable asset;
-
-    constructor(address _asset) {
-        asset = _asset;
-    }
-
-    function deposit(uint256 assets, address receiver) external returns (uint256) {
-        return assets; // 1:1 for simplicity
+    /**
+     * @dev Deposit ETH to mint WETH at a 1:1 ratio.
+     */
+    function deposit() public payable {
+        require(msg.value > 0, "Must send ETH to deposit");
+        _mint(msg.sender, msg.value);
     }
 
-    function withdraw(uint256 assets, address receiver, address owner) external returns (uint256) {
-        return assets;
+    /**
+     * @dev Withdraw WETH to receive ETH at a 1:1 ratio.
+     * @param wad Amount of WETH to burn
+     */
+    function withdraw(uint256 wad) public {
+        require(balanceOf(msg.sender) >= wad, "Insufficient WETH balance");
+        _burn(msg.sender, wad);
+        payable(msg.sender).transfer(wad);
     }
 
-    function transfer(address to, uint256 amount) external returns (bool) {
-        return true;
+    /**
+     * @dev Fallback function that allows receiving ETH directly and wrapping it.
+     */
+    receive() external payable {
+        deposit();
     }
 
-    function transferFrom(address from, address to, uint256 amount) external returns (bool) {
-        return true;
-    }
-
-    function approve(address spender, uint256 amount) external returns (bool) {
-        return true;
+    /**
+     * @dev Faucet function for tests: owner can mint arbitrary WETH.
+     * @param to Recipient address
+     * @param amount Amount of WETH to mint
+     */
+    function faucet(address to, uint256 amount) external {
+        _mint(to, amount);
     }
 }
 
@@ -131,7 +153,11 @@ contract MockRETH {
 
     function burn(uint256 amount) external {}
 
-    function transferFrom(address from, address to, uint256 amount) external returns (bool) {
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) external returns (bool) {
         return true;
     }
 }

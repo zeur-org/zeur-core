@@ -3,7 +3,7 @@ pragma solidity ^0.8.30;
 
 import {Test, console} from "forge-std/Test.sol";
 import {VaultETH} from "../src/pool/vault/VaultETH.sol";
-import {VaultETHV2} from "./mock/VaultETHV2.sol";
+import {VaultETHV2} from "./mock-v2/VaultETHV2.sol";
 import {TestSetupLocalHelpers} from "./helpers/TestSetupLocalHelpers.s.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {INITIAL_ADMIN, VAULT_ADMIN} from "../src/helpers/Constants.sol";

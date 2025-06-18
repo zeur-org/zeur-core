@@ -33,7 +33,8 @@ import {ETH_ADDRESS, INITIAL_ADMIN, POOL_ADMIN, SETTING_MANAGER_ADMIN, VAULT_ADM
 import {Roles} from "../../src/helpers/Roles.sol";
 
 // Mock contracts
-import {MockChainlinkOracleManager, MockERC20, MockPriorityPool, MockWithdrawalQueue, MockMorphoVault, MockWETH, MockRETH, MockRocketDepositPool, MockRocketDAOSettings} from "./TestMockHelpers.sol";
+import {MockChainlinkOracleManager, MockERC20, MockPriorityPool, MockWithdrawalQueue, MockWETH, MockRETH, MockRocketDepositPool, MockRocketDAOSettings} from "./TestMockHelpers.sol";
+import {MockMorpho} from "../../src/mock/MockMorpho.sol";
 import {MockLido} from "../../src/mock/MockLido.sol";
 import {MockTokenEURC} from "../../src/mock/MockTokenEURC.sol";
 
@@ -80,7 +81,7 @@ contract TestSetupLocalHelpers is Script {
         MockLido stETH;
         MockPriorityPool linkPriorityPool;
         MockWithdrawalQueue withdrawalQueue;
-        MockMorphoVault morphoVault;
+        MockMorpho morphoVault;
         MockRocketDepositPool rocketDepositPool;
         MockRocketDAOSettings rocketDAOSettings;
         MockChainlinkOracleManager oracleManager;
@@ -150,7 +151,9 @@ contract TestSetupLocalHelpers is Script {
         mockContracts.stETH = new MockLido();
         mockContracts.withdrawalQueue = new MockWithdrawalQueue();
         mockContracts.wETH = new MockWETH();
-        mockContracts.morphoVault = new MockMorphoVault(
+        mockContracts.morphoVault = new MockMorpho(
+            "Morpho WETH",
+            "morphoWETH",
             address(mockContracts.wETH)
         );
         mockContracts.rETH = new MockRETH();
@@ -403,7 +406,7 @@ contract TestSetupLocalHelpers is Script {
         );
 
         stakingRouters.stakingRouterETHMorpho = StakingRouterETHMorpho(
-            address(stakingRouterETHMorphoProxy)
+            payable(address(stakingRouterETHMorphoProxy))
         );
 
         StakingRouterLINK stakingRouterLINKImpl = new StakingRouterLINK();

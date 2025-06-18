@@ -3,7 +3,7 @@ pragma solidity ^0.8.30;
 
 import {Test, console} from "forge-std/Test.sol";
 import {ProtocolAccessManager} from "../src/pool/manager/ProtocolAccessManager.sol";
-import {ProtocolAccessManagerV2} from "./mock/ProtocolAccessManagerV2.sol";
+import {ProtocolAccessManagerV2} from "./mock-v2/ProtocolAccessManagerV2.sol";
 import {TestSetupLocalHelpers} from "./helpers/TestSetupLocalHelpers.s.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {INITIAL_ADMIN} from "../src/helpers/Constants.sol";

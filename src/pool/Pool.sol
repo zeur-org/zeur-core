@@ -371,6 +371,13 @@ contract Pool is
         userAccountData = _getUserAccountData(user, $);
     }
 
+    function getAssetType(address asset) external view returns (AssetType) {
+        PoolStorage storage $ = _getPoolStorage();
+        if ($._collateralAssetList.contains(asset)) return AssetType.Collateral;
+        if ($._debtAssetList.contains(asset)) return AssetType.Debt;
+        return AssetType.NoneAsset;
+    }
+
     function _getUserAccountData(
         address user,
         PoolStorage storage $

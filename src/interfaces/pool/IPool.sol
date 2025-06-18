@@ -16,6 +16,12 @@ interface IPool {
     error Pool_InsufficientAvailableBorrowsValue();
     error Pool_InsufficientHealthFactor();
 
+    enum AssetType {
+        NoneAsset,
+        Collateral,
+        Debt
+    }
+
     enum UserAction {
         Supply,
         Withdraw,
@@ -179,6 +185,8 @@ interface IPool {
     function getDebtAssetConfiguration(
         address debtAsset
     ) external view returns (DebtConfiguration memory);
+
+    function getAssetType(address asset) external view returns (AssetType);
 
     function getUserAccountData(
         address user

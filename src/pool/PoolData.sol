@@ -7,6 +7,8 @@ import {IChainlinkOracleManager} from "../interfaces/chainlink/IChainlinkOracleM
 import {IVault} from "../interfaces/vault/IVault.sol";
 import {IStakingRouter} from "../interfaces/router/IStakingRouter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {AccessManagedUpgradeable} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
@@ -58,176 +60,160 @@ contract PoolData is
         address newImplementation
     ) internal override restricted {}
 
-    function getUserAccountData(
-        address user
-    ) external view returns (IPool.UserAccountData memory) {}
-
-    function getUserCollateralData(
-        address user
-    )
-        external
-        view
-        override
-        returns (
-            address[] memory collateralAssets,
-            uint256[] memory collateralAmounts
-        )
-    {
+    // Main getters to use for UI
+    function getCollateralAssetList() external view returns (address[] memory) {
         PoolDataStorage storage $ = _getPoolDataStorage();
-        collateralAssets = $._pool.getCollateralAssetList();
-        uint256 length = collateralAssets.length;
-        collateralAmounts = new uint256[](length);
-
-        for (uint256 i = 0; i < length; i++) {
-            collateralAmounts[i] = IERC20(
-                $
-                    ._pool
-                    .getCollateralAssetConfiguration(collateralAssets[i])
-                    .colToken
-            ).balanceOf(user);
-        }
-
-        return (collateralAssets, collateralAmounts);
+        return $._pool.getCollateralAssetList();
     }
 
-    function getUserDebtData(
-        address user
-    )
-        external
-        view
-        override
-        returns (address[] memory debtAssets, uint256[] memory debtAmounts)
-    {
+    function getDebtAssetList() external view returns (address[] memory) {
         PoolDataStorage storage $ = _getPoolDataStorage();
-        debtAssets = $._pool.getDebtAssetList();
-        uint256 length = debtAssets.length;
-        debtAmounts = new uint256[](length);
-
-        for (uint256 i = 0; i < length; i++) {
-            debtAmounts[i] = IERC20(
-                $._pool.getDebtAssetConfiguration(debtAssets[i]).debtToken
-            ).balanceOf(user);
-        }
+        return $._pool.getDebtAssetList();
     }
 
-    function getCollateralStakingData(
-        address collateralAsset
-    )
-        external
-        view
-        returns (
-            address[] memory stakedTokens,
-            uint256[] memory stakedAmounts,
-            uint256[] memory underlyingAmounts
-        )
-    {
+    function getAssetData(
+        address asset
+    ) external view returns (AssetData memory) {
         PoolDataStorage storage $ = _getPoolDataStorage();
-        IPool.CollateralConfiguration memory configuration = $
+        AssetData memory assetData;
+        assetData.assetType = $._pool.getAssetType(asset);
+        if (assetData.assetType == IPool.AssetType.Collateral) {
+            IPool.CollateralConfiguration memory config = $
+                ._pool
+                .getCollateralAssetConfiguration(asset);
+            assetData.colToken = config.colToken;
+            // No debtToken
+            assetData.tokenVault = config.tokenVault;
+            assetData.supplyCap = config.supplyCap;
+            assetData.borrowCap = config.borrowCap;
+            assetData.totalSupply = IERC20(assetData.colToken).totalSupply();
+            // No totalBorrow
+            // No totalShares
+            // No utilizationRate
+            // No supplyRate
+            // No borrowRate
+            assetData.ltv = config.ltv;
+            assetData.liquidationThreshold = config.liquidationThreshold;
+            assetData.liquidationBonus = config.liquidationBonus;
+            assetData.liquidationProtocolFee = config.liquidationProtocolFee;
+            assetData.reserveFactor = config.reserveFactor;
+            assetData.decimals = IERC20Metadata(asset).decimals();
+            assetData.isFrozen = config.isFrozen;
+            assetData.isPaused = config.isPaused;
+            // TODO add stakedTokens data
+            assetData.stakedTokens = new StakedTokenData[](0);
+        } else if (assetData.assetType == IPool.AssetType.Debt) {
+            IPool.DebtConfiguration memory config = $
+                ._pool
+                .getDebtAssetConfiguration(asset);
+            assetData.colToken = config.colToken;
+            assetData.debtToken = config.debtToken;
+            // No tokenVault
+            assetData.supplyCap = config.supplyCap;
+            assetData.borrowCap = config.borrowCap;
+            assetData.totalBorrow = IERC20(assetData.debtToken).totalSupply();
+            assetData.totalSupply =
+                assetData.totalBorrow +
+                IERC20(asset).balanceOf(assetData.colToken);
+            assetData.totalShares = IERC20(assetData.colToken).totalSupply();
+            assetData.utilizationRate =
+                assetData.totalBorrow /
+                assetData.totalSupply;
+            // TODO supplyRate is necessary?
+            // TODO borrowRate is necessary?
+            assetData.reserveFactor = config.reserveFactor;
+            assetData.decimals = IERC20Metadata(asset).decimals();
+            assetData.isFrozen = config.isFrozen;
+            assetData.isPaused = config.isPaused;
+        }
+        return assetData;
+    }
+
+    function getUserData(address user) external view returns (UserData memory) {
+        PoolDataStorage storage $ = _getPoolDataStorage();
+        UserData memory userData;
+        IPool.UserAccountData memory userAccountData = $
             ._pool
-            .getCollateralAssetConfiguration(collateralAsset);
+            .getUserAccountData(user);
+        userData.totalCollateralValue = userAccountData.totalCollateralValue;
+        userData.totalDebtValue = userAccountData.totalDebtValue;
+        userData.availableBorrowsValue = userAccountData.availableBorrowsValue;
+        userData.currentLiquidationThreshold = userAccountData
+            .currentLiquidationThreshold;
+        userData.ltv = userAccountData.ltv;
+        userData.healthFactor = userAccountData.healthFactor;
 
-        IVault vault = IVault(configuration.tokenVault);
-        address[] memory stakingRouters = vault.getStakingRouters();
-        uint256 length = stakingRouters.length;
+        address[] memory collaterals = $._pool.getCollateralAssetList();
+        address[] memory debts = $._pool.getDebtAssetList();
+        userData.userCollateralData = new UserCollateralData[](
+            collaterals.length
+        );
+        userData.userDebtData = new UserDebtData[](debts.length);
 
-        stakedTokens = new address[](length);
-        stakedAmounts = new uint256[](length);
-        underlyingAmounts = new uint256[](length);
+        for (uint256 i; i < collaterals.length; i++) {
+            IPool.CollateralConfiguration memory config = $
+                ._pool
+                .getCollateralAssetConfiguration(collaterals[i]);
 
-        for (uint256 i = 0; i < length; i++) {
-            IERC20 stakedToken = IERC20(
-                IStakingRouter(stakingRouters[i]).getStakedToken()
+            userData.userCollateralData[i] = UserCollateralData(
+                collaterals[i],
+                IERC20(config.colToken).balanceOf(user)
             );
-            uint256 stakedAmount = stakedToken.balanceOf(address(vault));
-            stakedTokens[i] = address(stakedToken);
-            stakedAmounts[i] = stakedAmount;
-            underlyingAmounts[i] = IStakingRouter(stakingRouters[i])
-                .getTotalStakedUnderlying();
         }
+        for (uint256 i; i < debts.length; i++) {
+            IPool.DebtConfiguration memory config = $
+                ._pool
+                .getDebtAssetConfiguration(debts[i]);
+            IERC4626 colToken = IERC4626(config.colToken);
 
-        return (stakedTokens, stakedAmounts, underlyingAmounts);
+            userData.userDebtData[i] = UserDebtData(
+                debts[i],
+                colToken.convertToAssets(colToken.balanceOf(user)), // supplyBalance: shares => assets
+                IERC20(config.debtToken).balanceOf(user)
+            );
+        }
+        return userData;
     }
 
-    function getDebtData(
-        address debtAsset
-    )
-        external
-        view
-        returns (
-            address[] memory stakedTokens,
-            uint256[] memory stakedAmounts,
-            uint256[] memory underlyingAmounts
-        )
-    {
+    function getCollateralAssetConfiguration(
+        address collateralAsset
+    ) external view returns (IPool.CollateralConfiguration memory) {
         PoolDataStorage storage $ = _getPoolDataStorage();
-        IPool.DebtConfiguration memory configuration = $
-            ._pool
-            .getDebtAssetConfiguration(debtAsset);
+        return $._pool.getCollateralAssetConfiguration(collateralAsset);
     }
 
-    function getAllCollateralData()
-        external
-        view
-        returns (CollateralData[] memory collateralDatas)
-    {
+    function getCollateralAssetsConfiguration(
+        address[] memory collateralAssets
+    ) external view returns (IPool.CollateralConfiguration[] memory) {
         PoolDataStorage storage $ = _getPoolDataStorage();
-        address[] memory collateralAssets = $._pool.getCollateralAssetList();
         uint256 length = collateralAssets.length;
-        collateralDatas = new CollateralData[](length);
-
-        for (uint256 i = 0; i < length; i++) {
-            IPool.CollateralConfiguration memory configuration = $
-                ._pool
-                .getCollateralAssetConfiguration(collateralAssets[i]);
-            collateralDatas[i].collateralAsset = collateralAssets[i];
-
-            IVault vault = IVault(configuration.tokenVault);
-            address[] memory stakingRouters = vault.getStakingRouters();
-            uint256 stakingLength = stakingRouters.length;
-
-            collateralDatas[i].stakedTokens = new address[](stakingLength);
-            collateralDatas[i].stakedAmounts = new uint256[](stakingLength);
-            collateralDatas[i].underlyingAmounts = new uint256[](stakingLength);
-
-            for (uint256 j = 0; j < stakingLength; j++) {
-                IERC20 stakedToken = IERC20(
-                    IStakingRouter(stakingRouters[j]).getStakedToken()
-                );
-                collateralDatas[i].stakedTokens[j] = address(stakedToken);
-                collateralDatas[i].stakedAmounts[j] = stakedToken.balanceOf(
-                    address(vault)
-                );
-                collateralDatas[i].underlyingAmounts[j] = IStakingRouter(
-                    stakingRouters[j]
-                ).getTotalStakedUnderlying();
-            }
+        IPool.CollateralConfiguration[]
+            memory configs = new IPool.CollateralConfiguration[](length);
+        for (uint256 i; i < length; i++) {
+            configs[i] = $._pool.getCollateralAssetConfiguration(
+                collateralAssets[i]
+            );
         }
-
-        return collateralDatas;
+        return configs;
     }
 
-    function getAllDebtData()
-        external
-        view
-        returns (DebtData[] memory debtDatas)
-    {
+    function getDebtAssetConfiguration(
+        address debtAsset
+    ) external view returns (IPool.DebtConfiguration memory) {
         PoolDataStorage storage $ = _getPoolDataStorage();
-        address[] memory debtAssets = $._pool.getDebtAssetList();
+        return $._pool.getDebtAssetConfiguration(debtAsset);
+    }
+
+    function getDebtAssetsConfiguration(
+        address[] memory debtAssets
+    ) external view returns (IPool.DebtConfiguration[] memory) {
+        PoolDataStorage storage $ = _getPoolDataStorage();
         uint256 length = debtAssets.length;
-        debtDatas = new DebtData[](length);
-
-        for (uint256 i = 0; i < length; i++) {
-            IPool.DebtConfiguration memory configuration = $
-                ._pool
-                .getDebtAssetConfiguration(debtAssets[i]);
-            debtDatas[i].debtAsset = debtAssets[i];
-
-            debtDatas[i].suppliedAmount = IERC20(configuration.colToken)
-                .totalSupply();
-            debtDatas[i].borrowedAmount = IERC20(configuration.debtToken)
-                .totalSupply();
+        IPool.DebtConfiguration[]
+            memory configs = new IPool.DebtConfiguration[](length);
+        for (uint256 i; i < length; i++) {
+            configs[i] = $._pool.getDebtAssetConfiguration(debtAssets[i]);
         }
-
-        return debtDatas;
+        return configs;
     }
 }

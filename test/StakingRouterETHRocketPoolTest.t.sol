@@ -60,14 +60,14 @@ contract StakingRouterETHRocketPoolTest is Test {
     }
 
     function test_getExchangeRate() public view {
-        assertEq(stakingRouter.getExchangeRate(), 0);
+        assertEq(stakingRouter.getExchangeRate(), 1050000000000000000);
     }
 
     function test_getStakedTokenAndExchangeRate() public view {
         (address stakedToken, uint256 exchangeRate) = stakingRouter
             .getStakedTokenAndExchangeRate();
         assertEq(stakedToken, address(colETH));
-        assertEq(exchangeRate, 0);
+        assertEq(exchangeRate, 1050000000000000000);
     }
 
     function test_Upgrade() public {

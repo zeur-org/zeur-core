@@ -25,6 +25,7 @@ contract StakingRouterETHRocketPool is
 
     struct StakingRouterETHRocketPoolStorage {
         uint256 _totalStakedUnderlying;
+        address _underlyingToken; // Underlying token
         IRETH _rETH; // LST token
         IRocketDepositPool _depositPool;
         IRocketDAOProtocolSettingsDeposit _protocolSettings;
@@ -61,6 +62,7 @@ contract StakingRouterETHRocketPool is
         StakingRouterETHRocketPoolStorage
             storage $ = _getStakingRouterETHRocketPoolStorage();
 
+        $._underlyingToken = ETH_ADDRESS;
         $._rETH = IRETH(rETH);
         $._depositPool = IRocketDepositPool(depositPool);
         $._protocolSettings = IRocketDAOProtocolSettingsDeposit(
@@ -79,6 +81,8 @@ contract StakingRouterETHRocketPool is
         StakingRouterETHRocketPoolStorage
             storage $ = _getStakingRouterETHRocketPoolStorage();
 
+        $._totalStakedUnderlying += amount;
+
         uint256 fee = (amount * $._protocolSettings.getDepositFee()) /
             ETHER_TO_WEI;
         uint256 ethDepositNet = amount - fee;
@@ -89,8 +93,6 @@ contract StakingRouterETHRocketPool is
 
         // Mint rETH to the receiver
         $._rETH.safeTransfer(from, rEthAmount);
-
-        $._totalStakedUnderlying += amount;
     }
 
     function unstake(
@@ -100,6 +102,8 @@ contract StakingRouterETHRocketPool is
         StakingRouterETHRocketPoolStorage
             storage $ = _getStakingRouterETHRocketPoolStorage();
 
+        $._totalStakedUnderlying -= amount;
+
         $._rETH.safeTransferFrom(msg.sender, address(this), amount);
         $._rETH.burn(amount);
 
@@ -107,26 +111,6 @@ contract StakingRouterETHRocketPool is
         uint256 ethAmount = $._rETH.getEthValue(amount);
         (bool success, ) = payable(to).call{value: ethAmount}("");
         if (!success) revert StakingRouter_FailedToTransfer();
-
-        $._totalStakedUnderlying -= amount;
-    }
-
-    function getUnderlyingToken() external pure returns (address) {
-        return ETH_ADDRESS;
-    }
-
-    function getTotalStakedUnderlying() external view returns (uint256) {
-        StakingRouterETHRocketPoolStorage
-            storage $ = _getStakingRouterETHRocketPoolStorage();
-
-        return $._totalStakedUnderlying;
-    }
-
-    function getStakedToken() external view returns (address) {
-        StakingRouterETHRocketPoolStorage
-            storage $ = _getStakingRouterETHRocketPoolStorage();
-
-        return address($._rETH);
     }
 
     function getExchangeRate() external view override returns (uint256) {
@@ -134,6 +118,13 @@ contract StakingRouterETHRocketPool is
             storage $ = _getStakingRouterETHRocketPoolStorage();
 
         return $._rETH.getExchangeRate();
+    }
+
+    function getStakedToken() external view returns (address) {
+        StakingRouterETHRocketPoolStorage
+            storage $ = _getStakingRouterETHRocketPoolStorage();
+
+        return address($._rETH);
     }
 
     function getStakedTokenAndExchangeRate()
@@ -147,5 +138,19 @@ contract StakingRouterETHRocketPool is
         IRETH rETH = $._rETH;
 
         return (address(rETH), rETH.getExchangeRate());
+    }
+
+    function getUnderlyingToken() external view returns (address) {
+        StakingRouterETHRocketPoolStorage
+            storage $ = _getStakingRouterETHRocketPoolStorage();
+
+        return $._underlyingToken;
+    }
+
+    function getTotalStakedUnderlying() external view returns (uint256) {
+        StakingRouterETHRocketPoolStorage
+            storage $ = _getStakingRouterETHRocketPoolStorage();
+
+        return $._totalStakedUnderlying;
     }
 }

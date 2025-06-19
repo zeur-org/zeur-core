@@ -24,8 +24,8 @@ contract StakingRouterETHMorpho is
 
     struct StakingRouterETHMorphoStorage {
         uint256 _totalStakedUnderlying;
-        IWETH _wETH; // LST token
-        IMorphoVault _morphoVault; // Underlying token
+        IWETH _wETH; // Underlying token
+        IMorphoVault _morphoVault; // Underlying token, mWETH
     }
 
     // keccak256(abi.encode(uint256(keccak256("Zeur.storage.StakingRouterETHMorpho")) - 1)) & ~bytes32(uint256(0xff))
@@ -41,6 +41,8 @@ contract StakingRouterETHMorpho is
             $.slot := StakingRouterETHMorphoStorageLocation
         }
     }
+
+    receive() external payable {}
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -69,6 +71,7 @@ contract StakingRouterETHMorpho is
     function stake(address from, uint256 amount) external payable restricted {
         StakingRouterETHMorphoStorage
             storage $ = _getStakingRouterETHMorphoStorage();
+
         $._totalStakedUnderlying += amount;
 
         // Wrap ETH into WETH
@@ -87,12 +90,14 @@ contract StakingRouterETHMorpho is
     function unstake(address to, uint256 amount) external restricted {
         StakingRouterETHMorphoStorage
             storage $ = _getStakingRouterETHMorphoStorage();
+
         $._totalStakedUnderlying -= amount;
 
+        // Transfer mWETH from VaultETH to the router
         $._morphoVault.safeTransferFrom(msg.sender, address(this), amount);
-        $._morphoVault.forceApprove(address($._morphoVault), amount);
 
-        // Withdraw WETH from Morpho Vault
+        // Approve then withdraw WETH from Morpho Vault
+        $._morphoVault.forceApprove(address($._morphoVault), amount);
         $._morphoVault.withdraw(amount, address(this), address(this));
 
         // Unwrap WETH into ETH
@@ -103,11 +108,12 @@ contract StakingRouterETHMorpho is
         if (!success) revert StakingRouter_FailedToTransfer();
     }
 
-    function getUnderlyingToken() external view returns (address) {
+    function getExchangeRate() external view override returns (uint256) {
         StakingRouterETHMorphoStorage
             storage $ = _getStakingRouterETHMorphoStorage();
+        IMorphoVault morphoVault = $._morphoVault;
 
-        return address($._wETH);
+        return morphoVault.convertToAssets(1e18); // convert 1e18 LST mWETH to WETH/ETH
     }
 
     function getStakedToken() external view returns (address) {
@@ -116,15 +122,6 @@ contract StakingRouterETHMorpho is
 
         return address($._morphoVault);
     }
-
-    function getTotalStakedUnderlying() external view returns (uint256) {
-        StakingRouterETHMorphoStorage
-            storage $ = _getStakingRouterETHMorphoStorage();
-
-        return $._totalStakedUnderlying;
-    }
-
-    function getExchangeRate() external view override returns (uint256) {}
 
     function getStakedTokenAndExchangeRate()
         external
@@ -135,8 +132,20 @@ contract StakingRouterETHMorpho is
             storage $ = _getStakingRouterETHMorphoStorage();
         IMorphoVault morphoVault = $._morphoVault;
 
-        return (address(morphoVault), morphoVault.convertToAssets(1e18)); // convert 1e18 LST mWETH to WETH = ETH
+        return (address(morphoVault), morphoVault.convertToAssets(1e18)); // convert 1e18 LST mWETH to WETH/ETH
     }
 
-    receive() external payable {}
+    function getUnderlyingToken() external view returns (address) {
+        StakingRouterETHMorphoStorage
+            storage $ = _getStakingRouterETHMorphoStorage();
+
+        return address($._wETH);
+    }
+
+    function getTotalStakedUnderlying() external view returns (uint256) {
+        StakingRouterETHMorphoStorage
+            storage $ = _getStakingRouterETHMorphoStorage();
+
+        return $._totalStakedUnderlying;
+    }
 }

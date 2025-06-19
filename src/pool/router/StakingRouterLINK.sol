@@ -22,8 +22,8 @@ contract StakingRouterLINK is
 
     struct StakingRouterLINKStorage {
         uint256 _totalStakedUnderlying;
-        IERC20 _stLINK; // LST token
         IERC20 _link; // Underlying token
+        IERC20 _stLINK; // LST token
         IPriorityPool _linkPriorityPool;
     }
 
@@ -109,14 +109,8 @@ contract StakingRouterLINK is
         $._link.safeTransfer(to, amount);
     }
 
-    function getUnderlyingToken() external view returns (address) {
-        StakingRouterLINKStorage storage $ = _getStakingRouterLINKStorage();
-        return address($._link);
-    }
-
-    function getTotalStakedUnderlying() external view returns (uint256) {
-        StakingRouterLINKStorage storage $ = _getStakingRouterLINKStorage();
-        return $._totalStakedUnderlying;
+    function getExchangeRate() external pure returns (uint256) {
+        return 1e18; // 1 LINK = 1 stLINK
     }
 
     function getStakedToken() external view returns (address) {
@@ -134,7 +128,13 @@ contract StakingRouterLINK is
         return (address($._stLINK), 1e18); // 1 LINK = 1 stLINK
     }
 
-    function getExchangeRate() external pure returns (uint256) {
-        return 1e18; // 1 LINK = 1 stLINK
+    function getUnderlyingToken() external view returns (address) {
+        StakingRouterLINKStorage storage $ = _getStakingRouterLINKStorage();
+        return address($._link);
+    }
+
+    function getTotalStakedUnderlying() external view returns (uint256) {
+        StakingRouterLINKStorage storage $ = _getStakingRouterLINKStorage();
+        return $._totalStakedUnderlying;
     }
 }

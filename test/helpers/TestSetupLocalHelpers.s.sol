@@ -37,6 +37,7 @@ import {MockChainlinkOracleManager, MockERC20, MockPriorityPool, MockWithdrawalQ
 import {MockMorpho} from "../../src/mock/MockMorpho.sol";
 import {MockLido} from "../../src/mock/MockLido.sol";
 import {MockTokenEURC} from "../../src/mock/MockTokenEURC.sol";
+import {MockEETH, MockLiquidityPool} from "../../src/mock/MockEtherfi.sol";
 
 contract TestSetupLocalHelpers is Script {
     address public initialAdmin = INITIAL_ADMIN;
@@ -73,18 +74,20 @@ contract TestSetupLocalHelpers is Script {
     }
 
     struct MockContracts {
-        MockERC20 linkToken;
-        MockERC20 stLinkToken;
-        MockTokenEURC eurToken;
-        MockWETH wETH;
-        MockRETH rETH;
-        MockLido stETH;
-        MockPriorityPool linkPriorityPool;
-        MockWithdrawalQueue withdrawalQueue;
-        MockMorpho morphoVault;
-        MockRocketDepositPool rocketDepositPool;
-        MockRocketDAOSettings rocketDAOSettings;
-        MockChainlinkOracleManager oracleManager;
+        MockTokenEURC eurToken; // EUR token
+        MockLido stETH; // Lido stETH
+        MockWithdrawalQueue withdrawalQueue; // Lido withdrawal queue
+        MockEETH eETH; // Etherfi eETH
+        MockLiquidityPool liquidityPool; // Etherfi liquidity pool
+        MockWETH wETH; // Morpho WETH
+        MockMorpho morphoVault; // Morpho vault
+        MockRETH rETH; // Rocket Pool rETH
+        MockRocketDepositPool rocketDepositPool; // Rocket Pool deposit pool
+        MockRocketDAOSettings rocketDAOSettings; // Rocket Pool DAO settings
+        MockERC20 linkToken; // Chainlink LINK token
+        MockERC20 stLinkToken; // Stake.Link stLINK token
+        MockPriorityPool linkPriorityPool; // Stake.Link priority pool
+        MockChainlinkOracleManager oracleManager; // Chainlink oracle manager
     }
 
     CoreContracts public coreContracts;
@@ -142,25 +145,36 @@ contract TestSetupLocalHelpers is Script {
     function _deployMockContracts() internal {
         // Deploy mock tokens
         mockContracts.linkToken = new MockERC20("Chainlink Token", "LINK");
-        mockContracts.stLinkToken = new MockERC20("Staked LINK", "stLINK");
         mockContracts.eurToken = new MockTokenEURC("Euro Token", "EUR");
 
         // Deploy mock external protocol contracts
-        mockContracts.oracleManager = new MockChainlinkOracleManager();
-        mockContracts.linkPriorityPool = new MockPriorityPool();
+        // Mock Lido
         mockContracts.stETH = new MockLido();
         mockContracts.withdrawalQueue = new MockWithdrawalQueue();
+        // Mock Etherfi
+        mockContracts.eETH = new MockEETH();
+        mockContracts.liquidityPool = new MockLiquidityPool(
+            address(mockContracts.eETH)
+        );
+        // Mock Morpho
         mockContracts.wETH = new MockWETH();
         mockContracts.morphoVault = new MockMorpho(
             "Morpho WETH",
             "morphoWETH",
             address(mockContracts.wETH)
         );
+
+        // Mock Rocket Pool
         mockContracts.rETH = new MockRETH();
         mockContracts.rocketDepositPool = new MockRocketDepositPool();
         mockContracts.rocketDAOSettings = new MockRocketDAOSettings();
 
-        // Set proper asset prices
+        // Mock Stake.Link
+        mockContracts.stLinkToken = new MockERC20("Staked LINK", "stLINK");
+        mockContracts.linkPriorityPool = new MockPriorityPool();
+
+        // Mock oracle manager and set proper asset prices
+        mockContracts.oracleManager = new MockChainlinkOracleManager();
         mockContracts.oracleManager.setAssetPrice(ETH_ADDRESS, 3000 * 1e8); // $3000
         mockContracts.oracleManager.setAssetPrice(
             address(mockContracts.linkToken),
@@ -350,6 +364,16 @@ contract TestSetupLocalHelpers is Script {
     }
 
     function _deployStakingRouters() internal {
+        _deployStakingRouterLido();
+        _deployStakingRouterEtherfi();
+        _deployStakingRouterRocketPool();
+        _deployStakingRouterMorpho();
+        _deployStakingRouterLINK();
+
+        console.log("Staking routers deployed");
+    }
+
+    function _deployStakingRouterLido() internal {
         StakingRouterETHLido stakingRouterETHLidoImpl = new StakingRouterETHLido();
         ERC1967Proxy stakingRouterETHLidoProxy = new ERC1967Proxy(
             address(stakingRouterETHLidoImpl),
@@ -364,20 +388,26 @@ contract TestSetupLocalHelpers is Script {
         stakingRouters.stakingRouterETHLido = StakingRouterETHLido(
             address(stakingRouterETHLidoProxy)
         );
+    }
 
+    function _deployStakingRouterEtherfi() internal {
         StakingRouterETHEtherfi stakingRouterETHEtherfiImpl = new StakingRouterETHEtherfi();
         ERC1967Proxy stakingRouterETHEtherfiProxy = new ERC1967Proxy(
             address(stakingRouterETHEtherfiImpl),
             abi.encodeWithSelector(
                 StakingRouterETHEtherfi.initialize.selector,
-                address(coreContracts.accessManager)
+                address(coreContracts.accessManager),
+                address(mockContracts.eETH),
+                address(mockContracts.liquidityPool)
             )
         );
 
         stakingRouters.stakingRouterETHEtherfi = StakingRouterETHEtherfi(
             address(stakingRouterETHEtherfiProxy)
         );
+    }
 
+    function _deployStakingRouterRocketPool() internal {
         StakingRouterETHRocketPool stakingRouterETHRocketPoolImpl = new StakingRouterETHRocketPool();
         ERC1967Proxy stakingRouterETHRocketPoolProxy = new ERC1967Proxy(
             address(stakingRouterETHRocketPoolImpl),
@@ -393,7 +423,9 @@ contract TestSetupLocalHelpers is Script {
         stakingRouters.stakingRouterETHRocketPool = StakingRouterETHRocketPool(
             address(stakingRouterETHRocketPoolProxy)
         );
+    }
 
+    function _deployStakingRouterMorpho() internal {
         StakingRouterETHMorpho stakingRouterETHMorphoImpl = new StakingRouterETHMorpho();
         ERC1967Proxy stakingRouterETHMorphoProxy = new ERC1967Proxy(
             address(stakingRouterETHMorphoImpl),
@@ -408,7 +440,9 @@ contract TestSetupLocalHelpers is Script {
         stakingRouters.stakingRouterETHMorpho = StakingRouterETHMorpho(
             payable(address(stakingRouterETHMorphoProxy))
         );
+    }
 
+    function _deployStakingRouterLINK() internal {
         StakingRouterLINK stakingRouterLINKImpl = new StakingRouterLINK();
         ERC1967Proxy stakingRouterLINKProxy = new ERC1967Proxy(
             address(stakingRouterLINKImpl),
@@ -424,8 +458,6 @@ contract TestSetupLocalHelpers is Script {
         stakingRouters.stakingRouterLINK = StakingRouterLINK(
             address(stakingRouterLINKProxy)
         );
-
-        console.log("Staking routers deployed");
     }
 
     function _setupInitialConfigurations() internal {
@@ -446,7 +478,15 @@ contract TestSetupLocalHelpers is Script {
 
     function _setupAccessManager() internal {
         vm.startPrank(initialAdmin);
-        // Setup role in Pool contract
+        _setupPoolRoles();
+        _setupSettingManagerRoles();
+        _setupVaultRoles();
+        _setupTokenizationRoles();
+        _setupStakingRouterRoles();
+        vm.stopPrank();
+    }
+
+    function _setupPoolRoles() internal {
         coreContracts.accessManager.labelRole(
             Roles.POOL_INIT_RESERVE_ROLE,
             Roles.POOL_INIT_RESERVE_ROLE_NAME
@@ -466,8 +506,9 @@ contract TestSetupLocalHelpers is Script {
             Roles.getPoolSelectors(),
             Roles.POOL_INIT_RESERVE_ROLE
         );
+    }
 
-        // Set ProtocolSettingManager admin
+    function _setupSettingManagerRoles() internal {
         coreContracts.accessManager.labelRole(
             Roles.SETTING_MANAGER_ADMIN_ROLE,
             Roles.SETTING_MANAGER_ADMIN_ROLE_NAME
@@ -482,8 +523,9 @@ contract TestSetupLocalHelpers is Script {
             Roles.getSettingManagerSelectors(),
             Roles.SETTING_MANAGER_ADMIN_ROLE
         );
+    }
 
-        // Setup role in VaultETH/VaultLINK contract
+    function _setupVaultRoles() internal {
         coreContracts.accessManager.labelRole(
             Roles.VAULT_SETUP_ROLE,
             Roles.VAULT_SETUP_ROLE_NAME
@@ -523,8 +565,9 @@ contract TestSetupLocalHelpers is Script {
             Roles.getVaultLockCollateralSelectors(),
             Roles.VAULT_LOCK_COLLATERAL_ROLE
         );
+    }
 
-        // Setup role in ColToken/ColEUR/DebtEUR contract
+    function _setupTokenizationRoles() internal {
         coreContracts.accessManager.labelRole(
             Roles.MINTER_BURNER_ROLE,
             Roles.MINTER_BURNER_ROLE_NAME
@@ -554,8 +597,9 @@ contract TestSetupLocalHelpers is Script {
             Roles.getMinterDebtEURSelectors(),
             Roles.MINTER_BURNER_ROLE
         );
+    }
 
-        // Setup role in StakingRouterETHLido/StakingRouterETHMorpho/StakingRouterETHEtherfi/StakingRouterETHRocketPool contract
+    function _setupStakingRouterRoles() internal {
         coreContracts.accessManager.labelRole(
             Roles.ROUTER_ETH_VAULT_ROLE,
             Roles.ROUTER_ETH_VAULT_ROLE_NAME
@@ -600,8 +644,6 @@ contract TestSetupLocalHelpers is Script {
             Roles.getRouterLinkVaultSelectors(),
             Roles.ROUTER_LINK_VAULT_ROLE
         );
-
-        vm.stopPrank();
     }
 
     function _setupETHConfiguration() internal {

@@ -171,3 +171,5 @@ contract MockRocketDAOSettings {
         return 5000000000000000; // 0.5%
     }
 }
+
+/************************************** Mock contracts for Etherfi *******************************************/

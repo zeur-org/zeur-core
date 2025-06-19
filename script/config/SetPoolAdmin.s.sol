@@ -2,8 +2,8 @@
 pragma solidity ^0.8.30;
 
 import {Script} from "forge-std/Script.sol";
-import {Roles} from "../src/helpers/Roles.sol";
-import {ProtocolAccessManager} from "../src/pool/manager/ProtocolAccessManager.sol";
+import {Roles} from "../../src/helpers/Roles.sol";
+import {ProtocolAccessManager} from "../../src/pool/manager/ProtocolAccessManager.sol";
 
 contract SetPoolAdmin is Script {
     error SetPoolAdmin__AccessManagerNotSet();

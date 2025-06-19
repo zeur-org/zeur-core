@@ -23,6 +23,7 @@ contract StakingRouterETHLido is
 
     struct StakingRouterETHLidoStorage {
         uint256 _totalStakedUnderlying;
+        address _underlyingToken; // Underlying token
         ILido _stETH; // LST token
         IWithdrawalQueueERC721 _withdrawalQueueERC721;
     }
@@ -57,6 +58,7 @@ contract StakingRouterETHLido is
         StakingRouterETHLidoStorage
             storage $ = _getStakingRouterETHLidoStorage();
 
+        $._underlyingToken = ETH_ADDRESS;
         $._stETH = ILido(stETH);
         $._withdrawalQueueERC721 = IWithdrawalQueueERC721(
             withdrawalQueueERC721
@@ -71,16 +73,18 @@ contract StakingRouterETHLido is
         StakingRouterETHLidoStorage
             storage $ = _getStakingRouterETHLidoStorage();
 
+        $._totalStakedUnderlying += amount;
+
         uint256 stETHAmount = $._stETH.submit{value: amount}(from);
 
         IERC20(address($._stETH)).safeTransfer(from, stETHAmount);
-
-        $._totalStakedUnderlying += amount;
     }
 
     function unstake(address to, uint256 amount) external restricted {
         StakingRouterETHLidoStorage
             storage $ = _getStakingRouterETHLidoStorage();
+
+        $._totalStakedUnderlying -= amount;
 
         IERC20 stETH = IERC20(address($._stETH));
 
@@ -96,8 +100,6 @@ contract StakingRouterETHLido is
             .requestWithdrawals(amounts, address(this));
 
         // TODO: Store this requestId to claimWithdrawal later
-
-        $._totalStakedUnderlying -= amount;
     }
 
     function claimUnstake(uint256 requestId) external restricted {
@@ -107,8 +109,8 @@ contract StakingRouterETHLido is
         $._withdrawalQueueERC721.claimWithdrawal(requestId);
     }
 
-    function getUnderlyingToken() external pure returns (address) {
-        return ETH_ADDRESS;
+    function getExchangeRate() external pure returns (uint256) {
+        return 1e18; // 1 ETH = 1 stETH
     }
 
     function getStakedToken() external view returns (address) {
@@ -116,13 +118,6 @@ contract StakingRouterETHLido is
             storage $ = _getStakingRouterETHLidoStorage();
 
         return address($._stETH);
-    }
-
-    function getTotalStakedUnderlying() external view returns (uint256) {
-        StakingRouterETHLidoStorage
-            storage $ = _getStakingRouterETHLidoStorage();
-
-        return $._totalStakedUnderlying;
     }
 
     function getStakedTokenAndExchangeRate()
@@ -136,7 +131,17 @@ contract StakingRouterETHLido is
         return (address($._stETH), 1e18); // 1 ETH = 1 stETH
     }
 
-    function getExchangeRate() external pure returns (uint256) {
-        return 1e18; // 1 ETH = 1 stETH
+    function getUnderlyingToken() external view returns (address) {
+        StakingRouterETHLidoStorage
+            storage $ = _getStakingRouterETHLidoStorage();
+
+        return $._underlyingToken;
+    }
+
+    function getTotalStakedUnderlying() external view returns (uint256) {
+        StakingRouterETHLidoStorage
+            storage $ = _getStakingRouterETHLidoStorage();
+
+        return $._totalStakedUnderlying;
     }
 }

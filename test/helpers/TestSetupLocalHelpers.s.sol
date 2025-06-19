@@ -449,8 +449,8 @@ contract TestSetupLocalHelpers is Script {
             abi.encodeWithSelector(
                 StakingRouterLINK.initialize.selector,
                 address(coreContracts.accessManager),
-                address(mockContracts.stLinkToken),
                 address(mockContracts.linkToken),
+                address(mockContracts.stLinkToken),
                 address(mockContracts.linkPriorityPool)
             )
         );

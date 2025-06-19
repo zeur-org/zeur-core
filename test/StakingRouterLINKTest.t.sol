@@ -9,11 +9,12 @@ import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessMana
 import {INITIAL_ADMIN} from "../src/helpers/Constants.sol";
 import {Roles} from "../src/helpers/Roles.sol";
 import {ETH_ADDRESS} from "../src/helpers/Constants.sol";
-import {ColToken} from "../src/pool/tokenization/ColToken.sol";
+import {MockERC20} from "./helpers/TestMockHelpers.sol";
 
 contract StakingRouterLINKTest is Test {
     StakingRouterLINK private stakingRouter;
-    ColToken private colLINK;
+    MockERC20 linkToken; // Chainlink LINK token
+    MockERC20 stLinkToken; // Stake.Link stLINK token
 
     address public alice = makeAddr("alice");
     address public bob = makeAddr("bob");
@@ -32,23 +33,12 @@ contract StakingRouterLINKTest is Test {
         ) = setup.deployAll();
 
         stakingRouter = stakingRouters.stakingRouterLINK;
-        colLINK = tokenizationContracts.colLINK;
-    }
-
-    function test_stake() public {
-        vm.startPrank(alice);
-        stakingRouter.stake(alice, 100 ether);
-        vm.stopPrank();
-    }
-
-    function test_unstake() public {
-        vm.startPrank(alice);
-        stakingRouter.unstake(alice, 100 ether);
-        vm.stopPrank();
+        linkToken = mockContracts.linkToken;
+        stLinkToken = mockContracts.stLinkToken;
     }
 
     function test_getUnderlyingToken() public view {
-        assertEq(stakingRouter.getUnderlyingToken(), ETH_ADDRESS);
+        assertEq(stakingRouter.getUnderlyingToken(), address(linkToken));
     }
 
     function test_getTotalStakedUnderlying() public view {
@@ -56,7 +46,7 @@ contract StakingRouterLINKTest is Test {
     }
 
     function test_getStakedToken() public view {
-        assertEq(stakingRouter.getStakedToken(), address(colLINK));
+        assertEq(stakingRouter.getStakedToken(), address(stLinkToken));
     }
 
     function test_getExchangeRate() public view {
@@ -66,7 +56,7 @@ contract StakingRouterLINKTest is Test {
     function test_getStakedTokenAndExchangeRate() public view {
         (address stakedToken, uint256 exchangeRate) = stakingRouter
             .getStakedTokenAndExchangeRate();
-        assertEq(stakedToken, address(colLINK));
+        assertEq(stakedToken, address(stLinkToken));
         assertEq(exchangeRate, 1e18);
     }
 
@@ -97,6 +87,30 @@ contract StakingRouterLINKTest is Test {
         );
         stakingRouter.upgradeToAndCall(address(newStakingRouterImpl), "");
 
+        vm.stopPrank();
+    }
+
+    function testRevert_stakeNotAdmin() public {
+        vm.startPrank(alice);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessManaged.AccessManagedUnauthorized.selector,
+                alice
+            )
+        );
+        stakingRouter.stake(alice, 100 ether);
+        vm.stopPrank();
+    }
+
+    function testRevert_unstakeNotAdmin() public {
+        vm.startPrank(alice);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessManaged.AccessManagedUnauthorized.selector,
+                alice
+            )
+        );
+        stakingRouter.unstake(alice, 100 ether);
         vm.stopPrank();
     }
 }

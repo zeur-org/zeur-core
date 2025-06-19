@@ -9,11 +9,13 @@ import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessMana
 import {INITIAL_ADMIN} from "../src/helpers/Constants.sol";
 import {Roles} from "../src/helpers/Roles.sol";
 import {ETH_ADDRESS} from "../src/helpers/Constants.sol";
-import {ColToken} from "../src/pool/tokenization/ColToken.sol";
+import {MockMorpho} from "../src/mock/MockMorpho.sol";
+import {MockWETH} from "./helpers/TestMockHelpers.sol";
 
 contract StakingRouterETHMorphoTest is Test {
     StakingRouterETHMorpho private stakingRouter;
-    ColToken private colETH;
+    MockWETH private wETH;
+    MockMorpho private morphoVault;
 
     address public alice = makeAddr("alice");
     address public bob = makeAddr("bob");
@@ -32,23 +34,12 @@ contract StakingRouterETHMorphoTest is Test {
         ) = setup.deployAll();
 
         stakingRouter = stakingRouters.stakingRouterETHMorpho;
-        colETH = tokenizationContracts.colETH;
-    }
-
-    function test_stake() public {
-        vm.startPrank(alice);
-        stakingRouter.stake(alice, 100 ether);
-        vm.stopPrank();
-    }
-
-    function test_unstake() public {
-        vm.startPrank(alice);
-        stakingRouter.unstake(alice, 100 ether);
-        vm.stopPrank();
+        wETH = mockContracts.wETH;
+        morphoVault = mockContracts.morphoVault;
     }
 
     function test_getUnderlyingToken() public view {
-        assertEq(stakingRouter.getUnderlyingToken(), ETH_ADDRESS);
+        assertEq(stakingRouter.getUnderlyingToken(), address(wETH));
     }
 
     function test_getTotalStakedUnderlying() public view {
@@ -56,7 +47,7 @@ contract StakingRouterETHMorphoTest is Test {
     }
 
     function test_getStakedToken() public view {
-        assertEq(stakingRouter.getStakedToken(), address(colETH));
+        assertEq(stakingRouter.getStakedToken(), address(morphoVault));
     }
 
     function test_getExchangeRate() public view {
@@ -66,7 +57,7 @@ contract StakingRouterETHMorphoTest is Test {
     function test_getStakedTokenAndExchangeRate() public view {
         (address stakedToken, uint256 exchangeRate) = stakingRouter
             .getStakedTokenAndExchangeRate();
-        assertEq(stakedToken, address(colETH));
+        assertEq(stakedToken, address(morphoVault));
         assertEq(exchangeRate, 1e18);
     }
 
@@ -97,6 +88,30 @@ contract StakingRouterETHMorphoTest is Test {
         );
         stakingRouter.upgradeToAndCall(address(newStakingRouterImpl), "");
 
+        vm.stopPrank();
+    }
+
+    function testRevert_stakeNotAdmin() public {
+        vm.startPrank(alice);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessManaged.AccessManagedUnauthorized.selector,
+                alice
+            )
+        );
+        stakingRouter.stake(alice, 100 ether);
+        vm.stopPrank();
+    }
+
+    function testRevert_unstakeNotAdmin() public {
+        vm.startPrank(alice);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessManaged.AccessManagedUnauthorized.selector,
+                alice
+            )
+        );
+        stakingRouter.unstake(alice, 100 ether);
         vm.stopPrank();
     }
 }

@@ -50,6 +50,7 @@ contract VaultETH is
     function initialize(address initialAuthority) public initializer {
         __AccessManaged_init(initialAuthority);
         __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
     }
 
     function _authorizeUpgrade(

@@ -30,7 +30,7 @@ contract StakingRouterETHMorpho is
 
     // keccak256(abi.encode(uint256(keccak256("Zeur.storage.StakingRouterETHMorpho")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant StakingRouterETHMorphoStorageLocation =
-        0x4919a4906d22854e05d6bedefd40c3e02eba2bf042b0fbf851a3d8cafc07ca00;
+        0x3081ce8bf312198aa5a7e9dc813a2bc578326b78cb9e5e2454bf1d7c5a3de800;
 
     function _getStakingRouterETHMorphoStorage()
         private
@@ -133,8 +133,9 @@ contract StakingRouterETHMorpho is
     {
         StakingRouterETHMorphoStorage
             storage $ = _getStakingRouterETHMorphoStorage();
+        IMorphoVault morphoVault = $._morphoVault;
 
-        return (address($._morphoVault), 1e18); // TODO: exchange rate from ERC4626
+        return (address(morphoVault), morphoVault.convertToAssets(1e18)); // convert 1e18 LST mWETH to WETH = ETH
     }
 
     receive() external payable {}

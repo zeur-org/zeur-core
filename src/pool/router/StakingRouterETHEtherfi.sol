@@ -27,7 +27,7 @@ contract StakingRouterETHEtherfi is
 
     // keccak256(abi.encode(uint256(keccak256("Zeur.storage.StakingRouterETHEtherfi")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant StakingRouterETHEtherfiStorageLocation =
-        0x4919a4906d22854e05d6bedefd40c3e02eba2bf042b0fbf851a3d8cafc07ca00;
+        0x29f638b2585ff610b30bee43f42505dcdeabddacb4fbb85bcba27eeeb7d6f100;
 
     function _getStakingRouterETHEtherfiStorage()
         private

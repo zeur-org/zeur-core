@@ -31,8 +31,8 @@ contract DebtEUR is
         address newImplementation
     ) internal override restricted {}
 
-    function mint(address to, uint256 amount) external restricted {
-        _mint(to, amount);
+    function mint(address account, uint256 value) external restricted {
+        _mint(account, value);
     }
 
     function burn(address account, uint256 value) external restricted {

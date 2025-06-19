@@ -29,7 +29,7 @@ contract StakingRouterETHLido is
 
     // keccak256(abi.encode(uint256(keccak256("Zeur.storage.StakingRouterETHLido")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant StakingRouterETHLidoStorageLocation =
-        0x4919a4906d22854e05d6bedefd40c3e02eba2bf042b0fbf851a3d8cafc07ca00;
+        0x8579d5803bf34a354765a1565070611025e062971da12eced5a3cbcc9f1e2800;
 
     function _getStakingRouterETHLidoStorage()
         private

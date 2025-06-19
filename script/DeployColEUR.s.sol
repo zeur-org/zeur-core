@@ -12,9 +12,9 @@ contract DeployColEUR is Script {
 
     function run() external {
         address initialAuthority = vm.envAddress("INITIAL_AUTHORITY");
-        address assetEUR = vm.envAddress("COLEUR_ASSET");
         string memory name = vm.envString("COLEUR_NAME");
         string memory symbol = vm.envString("COLEUR_SYMBOL");
+        address assetEUR = vm.envAddress("COLEUR_ASSET");
 
         if (initialAuthority == address(0))
             revert DeployColEUR__InitialAuthorityNotSet();
@@ -29,9 +29,9 @@ contract DeployColEUR is Script {
             abi.encodeWithSelector(
                 ColEUR.initialize.selector,
                 initialAuthority,
-                assetEUR,
                 name,
-                symbol
+                symbol,
+                assetEUR
             )
         );
 

@@ -17,7 +17,6 @@ contract DeployColToken is Script {
 
         if (initialAuthority == address(0))
             revert DeployColToken__InitialAuthorityNotSet();
-
         if (bytes(name).length == 0) revert DeployColToken__NameNotSet();
         if (bytes(symbol).length == 0) revert DeployColToken__SymbolNotSet();
 

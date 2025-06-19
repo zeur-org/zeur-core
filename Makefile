@@ -35,3 +35,12 @@ deploy-debt-eur:
 
 deploy-staking-routers:
 	forge script script/DeployStakingRouters.s.sol:DeployStakingRouters --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi
+
+deploy-mock-eurc:
+	forge script script/DeployMockEURC.s.sol:DeployMockEURC --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi
+
+set-roles:
+	forge script script/config/SetRoles.s.sol:SetRoles --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast
+
+set-pool-admin:
+	forge script script/config/SetPoolAdmin.s.sol:SetPoolAdmin --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast

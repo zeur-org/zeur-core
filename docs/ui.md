@@ -143,7 +143,39 @@ getCollateralAssetsConfiguration(assets):   CollateralConfiguration[]
 getDebtAssetsConfiguration(assets):         DebtConfiguration[]
 ```
 
-Both configs include caps, token addresses, rates (LTV, fees), and pause/freeze flags.
+---
+
+### CollateralConfiguration
+
+| Field                    | Type      | Description                                                    |
+| ------------------------ | --------- | -------------------------------------------------------------- |
+| `supplyCap`              | `uint256` | Maximum total that can be supplied into this collateral market |
+| `borrowCap`              | `uint256` | Maximum total that can be borrowed against this collateral     |
+| `colToken`               | `address` | Collateral token address                                       |
+| `tokenVault`             | `address` | Vault contract managing this collateral                        |
+| `ltv`                    | `uint16`  | Loan-to-Value ratio in basis points (e.g. 7500 = 75%)          |
+| `liquidationThreshold`   | `uint16`  | Liquidation threshold in basis points (e.g. 8000 = 80%)        |
+| `liquidationBonus`       | `uint16`  | Liquidation bonus in basis points (e.g. 10500 = 5% bonus)      |
+| `liquidationProtocolFee` | `uint16`  | Protocol fee on liquidation bonus in bps (e.g. 1000 = 10%)     |
+| `reserveFactor`          | `uint16`  | Reserve factor in basis points (e.g. 1000 = 10%)               |
+| `isFrozen`               | `bool`    | Whether new supply/borrow operations are frozen                |
+| `isPaused`               | `bool`    | Whether all operations are paused                              |
+
+---
+
+### DebtConfiguration
+
+| Field           | Type      | Description                                              |
+| --------------- | --------- | -------------------------------------------------------- |
+| `supplyCap`     | `uint256` | Maximum total that can be supplied into this debt market |
+| `borrowCap`     | `uint256` | Maximum total that can be borrowed from this debt market |
+| `colToken`      | `address` | Collateral token address associated with this debt       |
+| `debtToken`     | `address` | Debt token address                                       |
+| `reserveFactor` | `uint16`  | Reserve factor in basis points (e.g. 1000 = 10%)         |
+| `isFrozen`      | `bool`    | Whether new supply/borrow operations are frozen          |
+| `isPaused`      | `bool`    | Whether all operations are paused                        |
+
+Both configurations include caps, token addresses, rates (LTV, fees), and pause/freeze flags.
 
 ---
 

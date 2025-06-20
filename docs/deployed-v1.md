@@ -18,30 +18,30 @@
 
 # Collateral contracts
 
-| Contract                         | Address |
-| -------------------------------- | ------- |
-| VaultETH proxy                   |         |
-| VaultLINK proxy                  |         |
-| ColTokenETH proxy                |         |
-| ColTokenLINK proxy               |         |
-| StakingRouterETHLido proxy       |         |
-| StakingRouterETHMorpho proxy     |         |
-| StakingRouterETHEtherfi proxy    |         |
-| StakingRouterETHRocketPool proxy |         |
-| StakingRouterLINK proxy          |         |
+| Contract                         | Address                                    |
+| -------------------------------- | ------------------------------------------ |
+| VaultETH proxy                   | 0xE4D4eF27Ecb431AE7ad7D24F6A88CD2DA644BEC7 |
+| VaultLINK proxy                  | 0xD009D58f6e363c1B9601428a46858D60D82CCB6c |
+| ColTokenETH proxy                | 0x9A76B04216b7dB457E4cad38d3Fe7DB1855db90F |
+| ColTokenLINK proxy               | 0x7E4c07D8304E6D3Ef1058a0F534186C043724e4f |
+| StakingRouterETHLido proxy       |                                            |
+| StakingRouterETHMorpho proxy     |                                            |
+| StakingRouterETHEtherfi proxy    |                                            |
+| StakingRouterETHRocketPool proxy |                                            |
+| StakingRouterLINK proxy          |                                            |
 
 # Mock LST platforms
 
-| Contract                          | Address |
-| --------------------------------- | ------- |
-| MockWETH (Morpho)                 |         |
-| MockMorpho (Morpho)               |         |
-| MockstETH (Lido)                  |         |
-| MockLido (Lido)                   |         |
-| MockEETH (Etherfi)                |         |
-| MockRETH (Rocket Pool)            |         |
-| MockDepositPool (Rocket Pool)     |         |
-| MockProtocolSetting (Rocket Pool) |         |
-| MockLINK (Stake LINK)             |         |
-| MockstLINK (Stake LINK)           |         |
-| MockPriorityPool (Stake LINK)     |         |
+| Contract                          | Address                                    |
+| --------------------------------- | ------------------------------------------ |
+| MockWETH (Morpho)                 |                                            |
+| MockMorpho (Morpho)               |                                            |
+| MockstETH (Lido)                  |                                            |
+| MockLido (Lido)                   |                                            |
+| MockEETH (Etherfi)                |                                            |
+| MockRETH (Rocket Pool)            |                                            |
+| MockDepositPool (Rocket Pool)     |                                            |
+| MockProtocolSetting (Rocket Pool) |                                            |
+| MockLINK (Stake LINK)             | 0x4e3bcaDaD85837Ea95c9a96FA21A339183Ad99DE |
+| MockstLINK (Stake LINK)           |                                            |
+| MockPriorityPool (Stake LINK)     |                                            |

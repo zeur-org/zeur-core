@@ -79,10 +79,11 @@ contract StakingRouterLINK is
         $._link.forceApprove(address($._linkPriorityPool), amount);
 
         // Stake the LINK in the priority pool
-        bytes[] memory data = new bytes[](0); // TODO: Add data
+        bytes[] memory data = new bytes[](0);
         $._linkPriorityPool.deposit(amount, false, data);
 
-        // TODO: get the return stLINK amount and transfer back to VaultLINK
+        // Transfer back stLINK to VaultLINK
+        $._stLINK.safeTransfer(from, amount);
     }
 
     function unstake(address to, uint256 amount) external restricted {
@@ -92,7 +93,7 @@ contract StakingRouterLINK is
         // Transfer stLINK from the router to the Vault
         $._stLINK.safeTransferFrom(msg.sender, address(this), amount);
 
-        // TODO: Withdraw the LINK from the priority pool
+        // Withdraw the LINK from the priority pool
         $._linkPriorityPool.withdraw(
             amount, // amount to withdraw
             0, // amount
@@ -102,8 +103,6 @@ contract StakingRouterLINK is
             false, // should queue withdrawal
             new bytes[](0) // data
         );
-
-        // TODO: check the returned amount of LINK
 
         // Transfer the LINK from the router to the Vault
         $._link.safeTransfer(to, amount);

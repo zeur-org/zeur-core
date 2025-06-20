@@ -116,9 +116,9 @@ contract PoolData is
                 assetData.totalBorrow +
                 IERC20(asset).balanceOf(assetData.colToken);
             assetData.totalShares = IERC20(assetData.colToken).totalSupply();
-            assetData.utilizationRate =
-                assetData.totalBorrow /
-                assetData.totalSupply;
+            assetData.utilizationRate = assetData.totalSupply > 0
+                ? assetData.totalBorrow / assetData.totalSupply
+                : 0;
             // TODO supplyRate is necessary?
             // TODO borrowRate is necessary?
             assetData.reserveFactor = config.reserveFactor;

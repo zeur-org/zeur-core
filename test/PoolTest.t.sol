@@ -31,10 +31,11 @@ import {DebtEUR} from "../src/pool/tokenization/DebtEUR.sol";
 import {VaultETH} from "../src/pool/vault/VaultETH.sol";
 import {VaultLINK} from "../src/pool/vault/VaultLINK.sol";
 // Mock contracts
-import {MockChainlinkOracleManager, MockERC20, MockPriorityPool, MockWithdrawalQueue, MockWETH, MockRETH, MockRocketDepositPool, MockRocketDAOSettings} from "./helpers/TestMockHelpers.sol";
+import {MockChainlinkOracleManager, MockERC20, MockWithdrawalQueue, MockWETH, MockRETH, MockRocketDepositPool, MockRocketDAOSettings} from "./helpers/TestMockHelpers.sol";
 import {MockMorpho} from "../src/mock/MockMorpho.sol";
 import {MockLido} from "../src/mock/MockLido.sol";
 import {MockTokenEURC} from "../src/mock/MockTokenEURC.sol";
+import {MockstLINK, MockPriorityPool} from "../src/mock/MockStakeLink.sol";
 
 // Interfaces for testing
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
@@ -61,7 +62,7 @@ contract PoolTest is Test {
     StakingRouterETHRocketPool private routerETHRocketPool;
 
     MockERC20 linkToken;
-    MockERC20 stLinkToken;
+    MockstLINK stLinkToken;
     MockTokenEURC eurToken;
     MockWETH wETH;
     MockRETH rETH;
@@ -386,12 +387,14 @@ contract PoolTest is Test {
             supplyAmount > 0 && supplyAmount <= linkToken.balanceOf(alice)
         );
 
-        vm.prank(alice);
+        vm.startPrank(alice);
         linkToken.approve(address(pool), supplyAmount);
         pool.supply(address(linkToken), supplyAmount, alice);
 
         // Check colLINK balance
         assertEq(colLINK.balanceOf(alice), supplyAmount);
+
+        vm.stopPrank();
     }
 
     function test_SupplyEUR(uint256 supplyAmount) public {
@@ -582,15 +585,32 @@ contract PoolTest is Test {
         uint256 supplyAmount,
         uint256 withdrawAmount
     ) public {
-        vm.assume(
-            supplyAmount >= 1000e18 &&
-                supplyAmount <= linkToken.balanceOf(alice)
-        );
+        vm.assume(supplyAmount <= linkToken.balanceOf(alice));
         vm.assume(withdrawAmount > 0 && withdrawAmount <= supplyAmount);
 
         vm.startPrank(alice);
         linkToken.approve(address(pool), supplyAmount);
         pool.supply(address(linkToken), supplyAmount, alice);
+
+        console.log(
+            "stLinkToken balance of linkVault:",
+            stLinkToken.balanceOf(address(linkVault))
+        );
+
+        uint256 colLINKBalanceBefore = colLINK.balanceOf(alice);
+        uint256 linkTokenBalanceBefore = linkToken.balanceOf(alice);
+
+        pool.withdraw(address(linkToken), withdrawAmount, alice);
+
+        // Check colLINK balance decreased
+        assertEq(
+            colLINK.balanceOf(alice),
+            colLINKBalanceBefore - withdrawAmount
+        );
+        assertEq(
+            linkToken.balanceOf(alice),
+            linkTokenBalanceBefore + withdrawAmount
+        );
 
         vm.stopPrank();
     }
@@ -661,24 +681,30 @@ contract PoolTest is Test {
         );
     }
 
-    function test_Repay() public {
-        // Setup: supply EUR and collateral, then borrow
-        vm.startPrank(alice);
-        pool.supply(address(eurToken), 50000e6, alice);
-        pool.supply{value: 2 ether}(ETH_ADDRESS, 2 ether, alice);
+    function test_Repay(uint256 borrowAmount, uint256 repayAmount) public {
+        vm.assume(borrowAmount > 0 && borrowAmount <= 10000e6);
+        vm.assume(repayAmount > 0 && repayAmount <= borrowAmount);
 
-        uint256 borrowAmount = 4000e6;
-        pool.borrow(address(eurToken), borrowAmount, alice);
+        vm.startPrank(bob);
+        eurToken.approve(address(pool), 50000e6);
+        pool.supply(address(eurToken), 50000e6, bob);
         vm.stopPrank();
 
-        // Repay half
-        uint256 repayAmount = 2000e6;
+        // Setup: supply EUR and collateral, then borrow
+        vm.startPrank(alice);
+        pool.supply{value: 5 ether}(ETH_ADDRESS, 5 ether, alice);
 
-        vm.prank(alice);
+        pool.borrow(address(eurToken), borrowAmount, alice);
+
+        assertEq(debtEUR.balanceOf(alice), borrowAmount);
+
+        eurToken.approve(address(pool), repayAmount);
         pool.repay(address(eurToken), repayAmount, alice);
 
         // Check debt token balance decreased
         assertEq(debtEUR.balanceOf(alice), borrowAmount - repayAmount);
+
+        vm.stopPrank();
     }
 
     function test_Liquidate() public {
@@ -892,8 +918,13 @@ contract PoolTest is Test {
     function test_MultipleAssetSupply() public {
         vm.startPrank(alice);
 
+        linkToken.mint(alice, 2000e18);
+        eurToken.mint(alice, 10000e6);
+
         // Supply multiple collateral assets
         pool.supply{value: 5 ether}(ETH_ADDRESS, 5 ether, alice);
+        linkToken.approve(address(pool), 2000e18);
+        eurToken.approve(address(pool), 10000e6);
         pool.supply(address(linkToken), 2000e18, alice);
         pool.supply(address(eurToken), 10000e6, alice);
 

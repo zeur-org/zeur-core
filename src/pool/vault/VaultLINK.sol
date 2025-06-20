@@ -53,6 +53,7 @@ contract VaultLINK is
     ) public initializer {
         __AccessManaged_init(initialAuthority);
         __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
 
         VaultLINKStorage storage $ = _getVaultLINKStorage();
         $._link = IERC20(link);
@@ -124,7 +125,7 @@ contract VaultLINK is
 
         IStakingRouter stakingRouter = $._currentStakingRouter;
         $._link.forceApprove(address(stakingRouter), amount);
-        stakingRouter.stake(from, amount);
+        stakingRouter.stake(address(this), amount);
     }
 
     function unlockCollateral(address to, uint256 amount) external restricted {

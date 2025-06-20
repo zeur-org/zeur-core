@@ -33,11 +33,12 @@ import {ETH_ADDRESS, INITIAL_ADMIN, POOL_ADMIN, SETTING_MANAGER_ADMIN, VAULT_ADM
 import {Roles} from "../../src/helpers/Roles.sol";
 
 // Mock contracts
-import {MockChainlinkOracleManager, MockERC20, MockPriorityPool, MockWithdrawalQueue, MockWETH, MockRETH, MockRocketDepositPool, MockRocketDAOSettings} from "./TestMockHelpers.sol";
+import {MockChainlinkOracleManager, MockERC20, MockWithdrawalQueue, MockWETH, MockRETH, MockRocketDepositPool, MockRocketDAOSettings} from "./TestMockHelpers.sol";
 import {MockMorpho} from "../../src/mock/MockMorpho.sol";
 import {MockLido} from "../../src/mock/MockLido.sol";
 import {MockTokenEURC} from "../../src/mock/MockTokenEURC.sol";
 import {MockEETH, MockLiquidityPool} from "../../src/mock/MockEtherfi.sol";
+import {MockstLINK, MockPriorityPool} from "../../src/mock/MockStakeLink.sol";
 
 contract TestSetupLocalHelpers is Script {
     address public initialAdmin = INITIAL_ADMIN;
@@ -85,7 +86,7 @@ contract TestSetupLocalHelpers is Script {
         MockRocketDepositPool rocketDepositPool; // Rocket Pool deposit pool
         MockRocketDAOSettings rocketDAOSettings; // Rocket Pool DAO settings
         MockERC20 linkToken; // Chainlink LINK token
-        MockERC20 stLinkToken; // Stake.Link stLINK token
+        MockstLINK stLinkToken; // Stake.Link stLINK token
         MockPriorityPool linkPriorityPool; // Stake.Link priority pool
         MockChainlinkOracleManager oracleManager; // Chainlink oracle manager
     }
@@ -170,8 +171,13 @@ contract TestSetupLocalHelpers is Script {
         mockContracts.rocketDAOSettings = new MockRocketDAOSettings();
 
         // Mock Stake.Link
-        mockContracts.stLinkToken = new MockERC20("Staked LINK", "stLINK");
-        mockContracts.linkPriorityPool = new MockPriorityPool();
+        mockContracts.stLinkToken = new MockstLINK(
+            address(mockContracts.linkToken)
+        );
+        mockContracts.linkPriorityPool = new MockPriorityPool(
+            address(mockContracts.linkToken),
+            address(mockContracts.stLinkToken)
+        );
 
         // Mock oracle manager and set proper asset prices
         mockContracts.oracleManager = new MockChainlinkOracleManager();

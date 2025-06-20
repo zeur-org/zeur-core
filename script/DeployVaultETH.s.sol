@@ -8,8 +8,6 @@ import {VaultETH} from "../src/pool/vault/VaultETH.sol";
 contract DeployVaultETH is Script {
     error DeployVaultETH__InitialAuthorityNotSet();
 
-    uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-    address deployerAddress = vm.addr(deployerPrivateKey);
     address initialAuthority = vm.envAddress("INITIAL_AUTHORITY");
 
     function run() external {

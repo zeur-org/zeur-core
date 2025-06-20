@@ -10,11 +10,12 @@ import {INITIAL_ADMIN} from "../src/helpers/Constants.sol";
 import {Roles} from "../src/helpers/Roles.sol";
 import {ETH_ADDRESS} from "../src/helpers/Constants.sol";
 import {MockERC20} from "./helpers/TestMockHelpers.sol";
+import {MockstLINK} from "../src/mock/MockStakeLink.sol";
 
 contract StakingRouterLINKTest is Test {
     StakingRouterLINK private stakingRouter;
     MockERC20 linkToken; // Chainlink LINK token
-    MockERC20 stLinkToken; // Stake.Link stLINK token
+    MockstLINK stLinkToken; // Stake.Link stLINK token
 
     address public alice = makeAddr("alice");
     address public bob = makeAddr("bob");

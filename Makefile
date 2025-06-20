@@ -1,5 +1,6 @@
 -include .env
 
+# Protocol core contracts
 deploy-protocol-access-manager:
 	forge script script/DeployProtocolAccessManager.s.sol:DeployProtocolAccessManager --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi
 
@@ -18,6 +19,7 @@ deploy-pool:
 deploy-pool-data:
 	forge script script/DeployPoolData.s.sol:DeployPoolData --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi
 
+# Collateral related contracts
 deploy-vault-eth:
 	forge script script/DeployVaultETH.s.sol:DeployVaultETH --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi
 
@@ -27,14 +29,19 @@ deploy-vault-link:
 deploy-col-token:
 	forge script script/DeployColToken.s.sol:DeployColToken --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi
 
+deploy-staking-routers:
+	forge script script/DeployStakingRouters.s.sol:DeployStakingRouters --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi
+
+deploy-mock-link:
+	forge script script/DeployMockLINK.s.sol:DeployMockLINK --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi
+
+# Debt related contracts
 deploy-col-eur:
 	forge script script/DeployColEUR.s.sol:DeployColEUR --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi
 
 deploy-debt-eur:
 	forge script script/DeployDebtEUR.s.sol:DeployDebtEUR --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi
 
-deploy-staking-routers:
-	forge script script/DeployStakingRouters.s.sol:DeployStakingRouters --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi
 
 deploy-mock-eurc:
 	forge script script/DeployMockEURC.s.sol:DeployMockEURC --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi
@@ -44,3 +51,9 @@ set-roles:
 
 set-pool-admin:
 	forge script script/config/SetPoolAdmin.s.sol:SetPoolAdmin --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast
+
+upgrade-pool:
+	forge script script/UpgradePool.s.sol:UpgradePool --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi
+
+upgrade-pool-data:
+	forge script script/UpgradePoolData.s.sol:UpgradePoolData --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi

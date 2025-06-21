@@ -254,11 +254,103 @@ contract Pool is
         uint256 debtAmount,
         address from
     ) external nonReentrant {
-        // TODO: implement logics
-        // Calculate health factor
-        // Verify liquidation conditions
-        // Execute liquidation with proper incentives
-        // Update user positions
+        PoolStorage storage $ = _getPoolStorage();
+
+        // Validate assets
+        if (!$._collateralAssetList.contains(collateralAsset))
+            revert Pool_AssetNotAllowed(collateralAsset);
+        if (!$._debtAssetList.contains(debtAsset))
+            revert Pool_AssetNotAllowed(debtAsset);
+
+        if (debtAmount == 0) revert Pool_InvalidAmount();
+
+        // Get configurations
+        CollateralConfiguration memory collateralConfig = $
+            ._collateralConfigurations[collateralAsset];
+        DebtConfiguration memory debtConfig = $._debtConfigurations[debtAsset];
+
+        // Check if assets are not paused (liquidation should be possible even when frozen)
+        if (collateralConfig.isPaused) revert Pool_CollateralPaused();
+        if (debtConfig.isPaused) revert Pool_DebtPaused();
+
+        // Get user account data to check health factor
+        UserAccountData memory userAccountData = _getUserAccountData(from, $);
+
+        // Check if user is liquidatable (health factor < 1)
+        if (userAccountData.healthFactor >= HEALTH_FACTOR_BASE)
+            revert Pool_HealthFactorNotLiquidatable();
+
+        // Calculate collateral amount to seize
+        uint256 debtAssetPrice = $._oracleManager.getAssetPrice(debtAsset);
+        uint256 collateralAssetPrice = $._oracleManager.getAssetPrice(
+            collateralAsset
+        );
+
+        // Calculate the USD value of debt being repaid
+        uint256 debtValueInUsd = (debtAmount * debtAssetPrice) /
+            10 ** IERC20Metadata(debtAsset).decimals();
+
+        // Apply liquidation bonus (liquidator gets discount on collateral)
+        uint256 collateralValueWithBonus = (debtValueInUsd *
+            collateralConfig.liquidationBonus) / 10000;
+
+        // Convert back to collateral asset amount
+        uint256 collateralAmountToSeize = (collateralValueWithBonus *
+            10 ** IERC20Metadata(collateralConfig.colToken).decimals()) /
+            collateralAssetPrice;
+
+        // Check if user has enough collateral
+        IColToken colToken = IColToken(collateralConfig.colToken);
+        uint256 userCollateralBalance = IERC20(collateralConfig.colToken)
+            .balanceOf(from);
+        if (collateralAmountToSeize > userCollateralBalance) {
+            collateralAmountToSeize = userCollateralBalance;
+            // Recalculate debt amount based on available collateral
+            uint256 maxDebtFromCollateral = (((userCollateralBalance *
+                collateralAssetPrice *
+                10000) / (collateralConfig.liquidationBonus * debtAssetPrice)) *
+                10 ** IERC20Metadata(debtAsset).decimals()) /
+                10 ** IERC20Metadata(collateralConfig.colToken).decimals();
+            if (debtAmount > maxDebtFromCollateral) {
+                debtAmount = maxDebtFromCollateral;
+            }
+        }
+
+        // Execute liquidation
+        IERC20 debtAssetToken = IERC20(debtAsset);
+
+        // Transfer debt asset from liquidator to colToken (similar to repay)
+        debtAssetToken.safeTransferFrom(
+            msg.sender,
+            debtConfig.colToken,
+            debtAmount
+        );
+
+        // Get user's debt balance for this specific asset
+        IDebtEUR debtToken = IDebtEUR(debtConfig.debtToken);
+        // Burn debt tokens from liquidated user
+        debtToken.burn(from, debtAmount);
+
+        // Transfer collateral from liquidated user to liquidator
+        if (collateralAsset == ETH_ADDRESS) {
+            // For ETH collateral, unlock from vault directly to liquidator
+            colToken.burn(from, collateralAmountToSeize);
+            IVault tokenVault = IVault(collateralConfig.tokenVault);
+            tokenVault.unlockCollateral(msg.sender, collateralAmountToSeize);
+        } else {
+            // For other collateral assets (LINK), unlock from vault to liquidator
+            colToken.burn(from, collateralAmountToSeize);
+            IVault tokenVault = IVault(collateralConfig.tokenVault);
+            tokenVault.unlockCollateral(msg.sender, collateralAmountToSeize);
+        }
+
+        emit Liquidate(
+            collateralAsset,
+            debtAsset,
+            debtAmount,
+            from,
+            msg.sender
+        );
     }
 
     function initCollateralAsset(

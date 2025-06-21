@@ -15,6 +15,7 @@ interface IPool {
     error Pool_BorrowCapExceeded();
     error Pool_InsufficientAvailableBorrowsValue();
     error Pool_InsufficientHealthFactor();
+    error Pool_HealthFactorNotLiquidatable();
 
     enum AssetType {
         NoneAsset,

@@ -554,7 +554,7 @@ contract PoolTest is Test {
         uint256 supplyAmount,
         uint256 withdrawAmount
     ) public {
-        vm.assume(supplyAmount >= 1 ether && supplyAmount <= alice.balance);
+        vm.assume(supplyAmount <= alice.balance);
         vm.assume(withdrawAmount > 0 && withdrawAmount <= supplyAmount);
 
         vm.startPrank(vaultAdmin);
@@ -730,6 +730,11 @@ contract PoolTest is Test {
     }
 
     function test_Liquidate() public {
+        vm.startPrank(vaultAdmin);
+        ethVault.updateCurrentStakingRouter(address(routerETHMorpho));
+        ethVault.updateCurrentUnstakingRouter(address(routerETHMorpho));
+        vm.stopPrank();
+
         // Bob supply EUR as lender
         vm.startPrank(bob);
         eurToken.approve(address(pool), 50000e6);
@@ -743,12 +748,15 @@ contract PoolTest is Test {
 
         // Price of ETH/LINK drop and liquidator liquidate Alice's position
         vm.startPrank(initialAdmin);
-        oracleManager.setAssetPrice(address(ETH_ADDRESS), 2000e8); // 1 ETH = 2000 USD
+        oracleManager.setAssetPrice(ETH_ADDRESS, 2500e8); // 1 ETH = 2500 USD
         vm.stopPrank();
 
         vm.startPrank(liquidator);
         eurToken.approve(address(pool), 4000e6);
-        pool.liquidate(address(linkToken), address(eurToken), 4000e6, alice);
+        pool.liquidate(ETH_ADDRESS, address(eurToken), 4000e6, alice);
+        console.log("alice debt:", debtEUR.balanceOf(alice));
+        console.log("alice colETH:", colETH.balanceOf(alice));
+        console.log("alice colLINK:", colLINK.balanceOf(alice));
 
         assertEq(debtEUR.balanceOf(alice), 0);
 
@@ -932,33 +940,41 @@ contract PoolTest is Test {
     }
 
     function test_EmitEvents() public {
+        vm.startPrank(vaultAdmin);
+        ethVault.updateCurrentStakingRouter(address(routerETHMorpho));
+        ethVault.updateCurrentUnstakingRouter(address(routerETHMorpho));
+        vm.stopPrank();
+
+        vm.startPrank(bob);
+        eurToken.approve(address(pool), 50000e6);
+        vm.expectEmit(true, true, true, true);
+        emit IPool.Supply(address(eurToken), 50000e6, bob, bob);
+        pool.supply(address(eurToken), 50000e6, bob);
+        vm.stopPrank();
+
         // Test supply event
-        vm.prank(alice);
+        vm.startPrank(alice);
         vm.expectEmit(true, true, true, true);
         emit IPool.Supply(ETH_ADDRESS, 1 ether, alice, alice);
         pool.supply{value: 1 ether}(ETH_ADDRESS, 1 ether, alice);
 
         // Test withdraw event
-        vm.prank(alice);
         vm.expectEmit(true, true, true, true);
         emit IPool.Withdraw(ETH_ADDRESS, 0.5 ether, alice, alice);
         pool.withdraw(ETH_ADDRESS, 0.5 ether, alice);
 
-        // Setup for borrow/repay events
-        vm.prank(alice);
-        pool.supply(address(eurToken), 50000e6, alice);
-
         // Test borrow event
-        vm.prank(alice);
         vm.expectEmit(true, true, true, true);
         emit IPool.Borrow(address(eurToken), 1000e6, alice, alice);
         pool.borrow(address(eurToken), 1000e6, alice);
 
         // Test repay event
-        vm.prank(alice);
+        eurToken.approve(address(pool), 500e6);
         vm.expectEmit(true, true, true, true);
         emit IPool.Repay(address(eurToken), 500e6, alice, alice);
         pool.repay(address(eurToken), 500e6, alice);
+
+        vm.stopPrank();
     }
 
     function test_MultipleAssetSupply() public {

@@ -33,12 +33,13 @@ import {ETH_ADDRESS, INITIAL_ADMIN, POOL_ADMIN, SETTING_MANAGER_ADMIN, VAULT_ADM
 import {Roles} from "../../src/helpers/Roles.sol";
 
 // Mock contracts
-import {MockChainlinkOracleManager, MockERC20, MockWithdrawalQueue, MockWETH, MockRETH, MockRocketDepositPool, MockRocketDAOSettings} from "./TestMockHelpers.sol";
-import {MockMorpho} from "../../src/mock/MockMorpho.sol";
-import {MockLido} from "../../src/mock/MockLido.sol";
 import {MockTokenEURC} from "../../src/mock/MockTokenEURC.sol";
+import {MockChainlinkOracleManager, MockERC20} from "./TestMockHelpers.sol";
+import {MockMorpho, MockWETH} from "../../src/mock/MockMorpho.sol";
+import {MockLido, MockWithdrawalQueue} from "../../src/mock/MockLido.sol";
 import {MockEETH, MockLiquidityPool} from "../../src/mock/MockEtherfi.sol";
 import {MockstLINK, MockPriorityPool} from "../../src/mock/MockStakeLink.sol";
+import {MockRETH, MockRocketDepositPool, MockRocketDAOSettings} from "../../src/mock/MockRocketPool.sol";
 
 contract TestSetupLocalHelpers is Script {
     address public initialAdmin = INITIAL_ADMIN;
@@ -151,7 +152,9 @@ contract TestSetupLocalHelpers is Script {
         // Deploy mock external protocol contracts
         // Mock Lido
         mockContracts.stETH = new MockLido();
-        mockContracts.withdrawalQueue = new MockWithdrawalQueue();
+        mockContracts.withdrawalQueue = new MockWithdrawalQueue(
+            address(mockContracts.stETH)
+        );
         // Mock Etherfi
         mockContracts.eETH = new MockEETH();
         mockContracts.liquidityPool = new MockLiquidityPool(
@@ -167,7 +170,9 @@ contract TestSetupLocalHelpers is Script {
 
         // Mock Rocket Pool
         mockContracts.rETH = new MockRETH();
-        mockContracts.rocketDepositPool = new MockRocketDepositPool();
+        mockContracts.rocketDepositPool = new MockRocketDepositPool(
+            address(mockContracts.rETH)
+        );
         mockContracts.rocketDAOSettings = new MockRocketDAOSettings();
 
         // Mock Stake.Link
@@ -392,7 +397,7 @@ contract TestSetupLocalHelpers is Script {
         );
 
         stakingRouters.stakingRouterETHLido = StakingRouterETHLido(
-            address(stakingRouterETHLidoProxy)
+            payable(address(stakingRouterETHLidoProxy))
         );
     }
 
@@ -427,7 +432,7 @@ contract TestSetupLocalHelpers is Script {
         );
 
         stakingRouters.stakingRouterETHRocketPool = StakingRouterETHRocketPool(
-            address(stakingRouterETHRocketPoolProxy)
+            payable(address(stakingRouterETHRocketPoolProxy))
         );
     }
 

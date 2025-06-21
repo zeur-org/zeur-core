@@ -31,11 +31,12 @@ import {DebtEUR} from "../src/pool/tokenization/DebtEUR.sol";
 import {VaultETH} from "../src/pool/vault/VaultETH.sol";
 import {VaultLINK} from "../src/pool/vault/VaultLINK.sol";
 // Mock contracts
-import {MockChainlinkOracleManager, MockERC20, MockWithdrawalQueue, MockWETH, MockRETH, MockRocketDepositPool, MockRocketDAOSettings} from "./helpers/TestMockHelpers.sol";
-import {MockMorpho} from "../src/mock/MockMorpho.sol";
-import {MockLido} from "../src/mock/MockLido.sol";
 import {MockTokenEURC} from "../src/mock/MockTokenEURC.sol";
+import {MockChainlinkOracleManager, MockERC20} from "./helpers/TestMockHelpers.sol";
+import {MockMorpho, MockWETH} from "../src/mock/MockMorpho.sol";
+import {MockLido, MockWithdrawalQueue} from "../src/mock/MockLido.sol";
 import {MockstLINK, MockPriorityPool} from "../src/mock/MockStakeLink.sol";
+import {MockRETH, MockRocketDepositPool, MockRocketDAOSettings} from "../src/mock/MockRocketPool.sol";
 
 // Interfaces for testing
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
@@ -166,6 +167,7 @@ contract PoolTest is Test {
         // Mint EUR and LINK to alice/bob
         eurToken.mint(alice, 1000000 * EURC_PRECISION);
         eurToken.mint(bob, 1000000 * EURC_PRECISION);
+        eurToken.mint(liquidator, 1000000 * EURC_PRECISION);
         linkToken.mint(alice, 1000 * LINK_PRECISION);
         linkToken.mint(bob, 1000 * LINK_PRECISION);
 
@@ -416,7 +418,9 @@ contract PoolTest is Test {
         uint256 supplyAmount,
         uint256 withdrawAmount
     ) public {
-        vm.assume(supplyAmount >= 1 ether && supplyAmount <= alice.balance);
+        vm.assume(
+            supplyAmount >= MIN_STAKING_AMOUNT && supplyAmount <= alice.balance
+        );
         vm.assume(withdrawAmount > 0 && withdrawAmount <= supplyAmount);
 
         // First supply
@@ -428,6 +432,8 @@ contract PoolTest is Test {
         console.log("Withdraw amount:", withdrawAmount);
         console.log("ETH balance before withdraw:", alice.balance);
         console.log("ColETH balance before withdraw:", colETH.balanceOf(alice));
+
+        vm.deal(address(withdrawalQueue), supplyAmount); // Simulate that there is available ETH in WithdrawalQueue
 
         // Then withdraw
         vm.prank(alice);
@@ -466,7 +472,9 @@ contract PoolTest is Test {
         uint256 supplyAmount,
         uint256 withdrawAmount
     ) public {
-        vm.assume(supplyAmount >= 1 ether && supplyAmount <= alice.balance);
+        vm.assume(
+            supplyAmount >= MIN_STAKING_AMOUNT && supplyAmount <= alice.balance
+        );
         vm.assume(withdrawAmount > 0 && withdrawAmount <= supplyAmount);
 
         vm.startPrank(vaultAdmin);
@@ -479,7 +487,9 @@ contract PoolTest is Test {
         uint256 supplyAmount,
         uint256 withdrawAmount
     ) public {
-        vm.assume(supplyAmount >= 1 ether && supplyAmount <= alice.balance);
+        vm.assume(
+            supplyAmount >= MIN_STAKING_AMOUNT && supplyAmount <= alice.balance
+        );
         vm.assume(withdrawAmount > 0 && withdrawAmount <= supplyAmount);
 
         vm.startPrank(vaultAdmin);
@@ -494,8 +504,20 @@ contract PoolTest is Test {
         uint256 aliceBalanceBefore = alice.balance;
         console.log("Supply amount:", supplyAmount);
         console.log("Withdraw amount:", withdrawAmount);
-        console.log("ETH balance before withdraw:", alice.balance);
-        console.log("ColETH balance before withdraw:", colETH.balanceOf(alice));
+        console.log("Alice ETH balance before withdraw:", alice.balance);
+        console.log(
+            "Alice ColETH balance before withdraw:",
+            colETH.balanceOf(alice)
+        );
+        console.log(
+            "Alice rETH balance before withdraw:",
+            rETH.balanceOf(alice)
+        );
+        console.log("ETH balance of rETH:", address(rETH).balance);
+        console.log(
+            "rETH balance of ethVault:",
+            rETH.balanceOf(address(ethVault))
+        );
 
         // Then withdraw
         pool.withdraw(ETH_ADDRESS, withdrawAmount, alice);
@@ -708,18 +730,40 @@ contract PoolTest is Test {
     }
 
     function test_Liquidate() public {
-        // Setup: supply EUR and collateral, then borrow
+        // Bob supply EUR as lender
+        vm.startPrank(bob);
+        eurToken.approve(address(pool), 50000e6);
+        pool.supply(address(eurToken), 50000e6, bob);
+        vm.stopPrank();
+
+        // Alice supply ETH/LINK and borrow EURC
         vm.startPrank(alice);
-        pool.supply(address(eurToken), 50000e6, alice);
-        pool.supply{value: 2 ether}(ETH_ADDRESS, 2 ether, alice);
+        pool.supply{value: 2 ether}(ETH_ADDRESS, 2 ether, alice); // 2 ETH = 6000 USD
+        pool.borrow(address(eurToken), 4000e6, alice); // 4000 EURC = 4320 USD
+
+        // Price of ETH/LINK drop and liquidator liquidate Alice's position
+        vm.startPrank(initialAdmin);
+        oracleManager.setAssetPrice(address(ETH_ADDRESS), 2000e8); // 1 ETH = 2000 USD
+        vm.stopPrank();
+
+        vm.startPrank(liquidator);
+        eurToken.approve(address(pool), 4000e6);
+        pool.liquidate(address(linkToken), address(eurToken), 4000e6, alice);
+
+        assertEq(debtEUR.balanceOf(alice), 0);
+
+        vm.stopPrank();
+        // Setup: supply EUR and collateral, then borrow
     }
 
     function test_GetUserAccountData() public {
         // Setup alice position
         vm.startPrank(alice);
-        pool.supply(address(eurToken), 50000e6, alice);
+        linkToken.approve(address(pool), 1000e18);
+        eurToken.approve(address(pool), 50000e6);
         pool.supply{value: 2 ether}(ETH_ADDRESS, 2 ether, alice);
         pool.supply(address(linkToken), 1000e18, alice);
+        pool.supply(address(eurToken), 50000e6, alice);
 
         uint256 borrowAmount = 3000e6;
         pool.borrow(address(eurToken), borrowAmount, alice);
@@ -816,6 +860,8 @@ contract PoolTest is Test {
         eurToken.approve(address(pool), 10000e6);
         pool.supply(address(eurToken), 10000e6, bob);
         vm.stopPrank();
+
+        vm.deal(address(withdrawalQueue), 10 ether); // Simulate that there are available ETH in withdrawal queue
 
         // Setup position close to liquidation
         vm.startPrank(alice);

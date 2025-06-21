@@ -9,8 +9,7 @@ import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessMana
 import {INITIAL_ADMIN} from "../src/helpers/Constants.sol";
 import {Roles} from "../src/helpers/Roles.sol";
 import {ETH_ADDRESS} from "../src/helpers/Constants.sol";
-import {MockMorpho} from "../src/mock/MockMorpho.sol";
-import {MockWETH} from "./helpers/TestMockHelpers.sol";
+import {MockMorpho, MockWETH} from "../src/mock/MockMorpho.sol";
 
 contract StakingRouterETHMorphoTest is Test {
     StakingRouterETHMorpho private stakingRouter;

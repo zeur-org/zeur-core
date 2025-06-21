@@ -9,7 +9,7 @@ import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessMana
 import {INITIAL_ADMIN} from "../src/helpers/Constants.sol";
 import {Roles} from "../src/helpers/Roles.sol";
 import {ETH_ADDRESS} from "../src/helpers/Constants.sol";
-import {MockRETH} from "./helpers/TestMockHelpers.sol";
+import {MockRETH} from "../src/mock/MockRocketPool.sol";
 
 contract StakingRouterETHRocketPoolTest is Test {
     StakingRouterETHRocketPool private stakingRouter;
@@ -48,14 +48,14 @@ contract StakingRouterETHRocketPoolTest is Test {
     }
 
     function test_getExchangeRate() public view {
-        assertEq(stakingRouter.getExchangeRate(), 1050000000000000000);
+        assertEq(stakingRouter.getExchangeRate(), 1000000000000000000);
     }
 
     function test_getStakedTokenAndExchangeRate() public view {
         (address stakedToken, uint256 exchangeRate) = stakingRouter
             .getStakedTokenAndExchangeRate();
         assertEq(stakedToken, address(rETH));
-        assertEq(exchangeRate, 1050000000000000000);
+        assertEq(exchangeRate, 1000000000000000000);
     }
 
     function test_Upgrade() public {
@@ -65,7 +65,7 @@ contract StakingRouterETHRocketPoolTest is Test {
         stakingRouter.upgradeToAndCall(address(newStakingRouterImpl), "");
 
         StakingRouterETHRocketPoolV2 newStakingRouter = StakingRouterETHRocketPoolV2(
-                address(stakingRouter)
+                payable(address(stakingRouter))
             );
         assertEq(newStakingRouter.getVersion(), 2);
 

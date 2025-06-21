@@ -42,6 +42,8 @@ contract StakingRouterETHLido is
         }
     }
 
+    receive() external payable {}
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -99,7 +101,11 @@ contract StakingRouterETHLido is
             ._withdrawalQueueERC721
             .requestWithdrawals(amounts, address(this));
 
-        // TODO: Store this requestId to claimWithdrawal later
+        $._withdrawalQueueERC721.claimWithdrawal(requestIds[0]);
+
+        // Transfer ETH to user
+        (bool success, ) = payable(to).call{value: amount}("");
+        if (!success) revert StakingRouter_FailedToTransfer();
     }
 
     function claimUnstake(uint256 requestId) external restricted {

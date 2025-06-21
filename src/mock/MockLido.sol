@@ -584,3 +584,140 @@ contract MockLido is ERC20, Ownable, ReentrancyGuard {
         // Allow contract to receive ETH for rewards
     }
 }
+
+contract MockWithdrawalQueue {
+    error MockLido_FailedToTransfer();
+
+    struct WithdrawalRequest {
+        uint256 stETHAmount;
+        uint256 requestTime;
+        bool finalized;
+        bool claimed;
+        address owner;
+    }
+
+    MockLido public immutable stETH;
+    uint256 public withdrawalDelay = 0; // Mock 0 delay
+    uint256 public nextRequestId = 1;
+
+    mapping(uint256 => WithdrawalRequest) public withdrawalRequests;
+    mapping(address => uint256[]) public userRequests;
+
+    event WithdrawalRequested(
+        uint256 indexed requestId,
+        address indexed owner,
+        uint256 amountOfStETH
+    );
+
+    event WithdrawalClaimed(
+        uint256 indexed requestId,
+        address indexed owner,
+        uint256 amountOfETH
+    );
+
+    constructor(address _stETH) {
+        stETH = MockLido(payable(_stETH));
+    }
+
+    function requestWithdrawals(
+        uint256[] calldata amounts,
+        address owner
+    ) external returns (uint256[] memory) {
+        require(amounts.length > 0, "Empty amounts");
+
+        uint256[] memory requestIds = new uint256[](amounts.length);
+
+        for (uint256 i = 0; i < amounts.length; i++) {
+            require(amounts[i] > 0, "Invalid amount");
+            require(
+                stETH.balanceOf(owner) >= amounts[i],
+                "Insufficient stETH balance"
+            );
+
+            uint256 requestId = nextRequestId++;
+
+            // Transfer stETH from owner to this contract (which burns it)
+            stETH.transferFrom(owner, address(this), amounts[i]);
+
+            // Create withdrawal request
+            withdrawalRequests[requestId] = WithdrawalRequest({
+                stETHAmount: amounts[i],
+                requestTime: block.timestamp,
+                finalized: true, // Auto-finalize for simplicity in mock
+                claimed: false,
+                owner: owner
+            });
+
+            userRequests[owner].push(requestId);
+            requestIds[i] = requestId;
+
+            emit WithdrawalRequested(requestId, owner, amounts[i]);
+        }
+
+        return requestIds;
+    }
+
+    function claimWithdrawal(uint256 requestId) external {
+        WithdrawalRequest storage request = withdrawalRequests[requestId];
+
+        require(request.owner != address(0), "Invalid request ID");
+        require(request.owner == msg.sender, "Not request owner");
+        require(request.finalized, "Request not finalized");
+        require(!request.claimed, "Already claimed");
+        require(
+            block.timestamp >= request.requestTime + withdrawalDelay,
+            "Withdrawal delay not met"
+        );
+        require(
+            address(this).balance >= request.stETHAmount,
+            "Insufficient ETH balance"
+        );
+
+        request.claimed = true;
+
+        // Send ETH back to user
+        (bool success, ) = payable(msg.sender).call{value: request.stETHAmount}(
+            ""
+        );
+        if (!success) revert MockLido_FailedToTransfer();
+
+        emit WithdrawalClaimed(requestId, msg.sender, request.stETHAmount);
+    }
+
+    // Helper function to get user's withdrawal requests
+    function getUserRequests(
+        address user
+    ) external view returns (uint256[] memory) {
+        return userRequests[user];
+    }
+
+    // Helper function to get withdrawal request details
+    function getWithdrawalRequest(
+        uint256 requestId
+    )
+        external
+        view
+        returns (
+            uint256 stETHAmount,
+            uint256 requestTime,
+            bool finalized,
+            bool claimed,
+            address owner
+        )
+    {
+        WithdrawalRequest memory request = withdrawalRequests[requestId];
+        return (
+            request.stETHAmount,
+            request.requestTime,
+            request.finalized,
+            request.claimed,
+            request.owner
+        );
+    }
+
+    // Function to fund the contract with ETH for withdrawals
+    receive() external payable {}
+
+    // Function to fund the contract with ETH (for testing purposes)
+    function fundContract() external payable {}
+}

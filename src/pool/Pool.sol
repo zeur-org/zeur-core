@@ -159,13 +159,6 @@ contract Pool is
             // Unlock collateral from vault
             IVault tokenVault = IVault(configuration.tokenVault);
             tokenVault.unlockCollateral(to, amount); // Unlock process is the same for ETH and LINK
-            // if (asset == ETH_ADDRESS) {
-            //     tokenVault.unlockCollateral(to, amount);
-            // } else {
-            //     // TODO: unlockCollateral for ERC20
-            // }
-
-            // Transfer collateral back to user
         } else if ($._debtAssetList.contains(asset)) {
             DebtConfiguration memory configuration = $._debtConfigurations[
                 asset
@@ -184,7 +177,6 @@ contract Pool is
             revert Pool_AssetNotAllowed(asset);
         }
 
-        // TODO: Check HF of msg.sender after withdraw
         UserAccountData memory userAccountData = _getUserAccountData(
             msg.sender,
             $

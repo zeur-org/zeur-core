@@ -20,7 +20,7 @@ contract DeployStakingRouters is Script {
     error DeployStakingRouters__RocketPoolProtocolSettingNotSet();
     error DeployStakingRouters__MorphoETHNotSet();
     error DeployStakingRouters__MorphoPoolNotSet();
-    error DeployStakingRouters__LINKNotSet(); // TODO: Add LINK token address
+    error DeployStakingRouters__LINKNotSet();
 
     address initialAuthority = vm.envAddress("INITIAL_AUTHORITY");
     address lidoStETH = vm.envAddress("LIDO_STETH");

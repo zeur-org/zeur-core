@@ -45,6 +45,8 @@ contract StakingRouterETHRocketPool is
         }
     }
 
+    receive() external payable {}
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -89,7 +91,7 @@ contract StakingRouterETHRocketPool is
         uint256 rEthAmount = $._rETH.getRethValue(ethDepositNet);
 
         // Deposit ETH into the deposit pool
-        $._depositPool.deposit{value: ethDepositNet}();
+        $._depositPool.deposit{value: amount}();
 
         // Mint rETH to the receiver
         $._rETH.safeTransfer(from, rEthAmount);

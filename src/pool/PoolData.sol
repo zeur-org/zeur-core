@@ -100,8 +100,20 @@ contract PoolData is
             assetData.decimals = IERC20Metadata(asset).decimals();
             assetData.isFrozen = config.isFrozen;
             assetData.isPaused = config.isPaused;
-            // TODO add stakedTokens data
-            assetData.stakedTokens = new StakedTokenData[](0);
+            // StakedTokens data
+            address[] memory routers = IVault(assetData.tokenVault)
+                .getStakingRouters();
+            assetData.stakedTokens = new StakedTokenData[](routers.length);
+
+            for (uint256 i; i < routers.length; i++) {
+                address router = routers[i];
+                address stakedToken = IStakingRouter(router).getStakedToken();
+                assetData.stakedTokens[i] = StakedTokenData(
+                    stakedToken,
+                    IStakingRouter(router).getTotalStakedUnderlying(), // underlying amount = totalSupply of the asset
+                    IERC20(stakedToken).balanceOf(assetData.tokenVault) // staked amount = stToken balance of the vault
+                );
+            }
         } else if (assetData.assetType == IPool.AssetType.Debt) {
             IPool.DebtConfiguration memory config = $
                 ._pool
@@ -119,8 +131,8 @@ contract PoolData is
             assetData.utilizationRate = assetData.totalSupply > 0
                 ? assetData.totalBorrow / assetData.totalSupply
                 : 0;
-            // TODO supplyRate is necessary?
-            // TODO borrowRate is necessary?
+            // TODO supplyRate is necessary? should be calculated offchain based on reward distributed last day/7 days/30 days ?
+            // borrowRate = 0 since zero interest rate
             assetData.reserveFactor = config.reserveFactor;
             assetData.decimals = IERC20Metadata(asset).decimals();
             assetData.isFrozen = config.isFrozen;

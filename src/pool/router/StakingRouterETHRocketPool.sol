@@ -8,7 +8,6 @@ import {IRocketDAOProtocolSettingsDeposit} from "../../interfaces/lst/rocket-poo
 import {IStakingRouter} from "../../interfaces/router/IStakingRouter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {AccessManagedUpgradeable} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -16,7 +15,6 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/U
 contract StakingRouterETHRocketPool is
     Initializable,
     AccessManagedUpgradeable,
-    ReentrancyGuardUpgradeable,
     UUPSUpgradeable,
     IStakingRouter
 {
@@ -76,10 +74,7 @@ contract StakingRouterETHRocketPool is
         address newImplementation
     ) internal override restricted {}
 
-    function stake(
-        address from,
-        uint256 amount
-    ) external payable nonReentrant restricted {
+    function stake(address from, uint256 amount) external payable restricted {
         StakingRouterETHRocketPoolStorage
             storage $ = _getStakingRouterETHRocketPoolStorage();
 
@@ -97,10 +92,7 @@ contract StakingRouterETHRocketPool is
         $._rETH.safeTransfer(from, rEthAmount);
     }
 
-    function unstake(
-        address to,
-        uint256 amount
-    ) external nonReentrant restricted {
+    function unstake(address to, uint256 amount) external restricted {
         StakingRouterETHRocketPoolStorage
             storage $ = _getStakingRouterETHRocketPoolStorage();
 

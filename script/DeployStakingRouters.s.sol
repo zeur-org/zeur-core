@@ -33,11 +33,11 @@ contract DeployStakingRouters is Script {
     address rocketPool = vm.envAddress("ROCKET_POOL");
     address rocketProtocolSetting = vm.envAddress("ROCKET_PROTOCOL_SETTING");
 
-    address morphoETH = vm.envAddress("MORPHO_ETH");
-    address morphoPool = vm.envAddress("MORPHO_POOL");
+    address morphoETH = vm.envAddress("MORPHO_WETH");
+    address morphoVault = vm.envAddress("MORPHO_VAULT");
 
-    address stLink = vm.envAddress("STAKELINK_STLINK");
     address link = vm.envAddress("LINK_TOKEN");
+    address stLink = vm.envAddress("STAKELINK_STLINK");
     address priorityPool = vm.envAddress("STAKELINK_PRIORITY_POOL");
 
     function run() external {
@@ -60,7 +60,9 @@ contract DeployStakingRouters is Script {
             "StakingRouterETHEtherfi.sol",
             abi.encodeWithSelector(
                 StakingRouterETHEtherfi.initialize.selector,
-                initialAuthority
+                initialAuthority,
+                etherfiETH,
+                etherfiPool
             )
         );
 
@@ -81,7 +83,7 @@ contract DeployStakingRouters is Script {
                 StakingRouterETHMorpho.initialize.selector,
                 initialAuthority,
                 morphoETH,
-                morphoPool
+                morphoVault
             )
         );
 
@@ -90,8 +92,8 @@ contract DeployStakingRouters is Script {
             abi.encodeWithSelector(
                 StakingRouterLINK.initialize.selector,
                 initialAuthority,
-                stLink,
                 link,
+                stLink,
                 priorityPool
             )
         );
@@ -114,12 +116,12 @@ contract DeployStakingRouters is Script {
 
         console.log("Morpho Router Proxy:", morphoRouterProxy);
         console.log("Morpho ETH:", morphoETH);
-        console.log("Morpho Pool:", morphoPool);
+        console.log("Morpho Vault:", morphoVault);
 
         console.log("Staking Router LINK Proxy:", stakingRouterLINKProxy);
-        console.log("Staking Router LINK:", priorityPool);
         console.log("Staking Router LINK:", link);
         console.log("Staking Router LINK:", stLink);
+        console.log("Staking Router LINK:", priorityPool);
 
         vm.stopBroadcast();
     }

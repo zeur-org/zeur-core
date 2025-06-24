@@ -24,11 +24,11 @@
 | VaultLINK proxy                  | 0xD009D58f6e363c1B9601428a46858D60D82CCB6c |
 | ColTokenETH proxy                | 0x9A76B04216b7dB457E4cad38d3Fe7DB1855db90F |
 | ColTokenLINK proxy               | 0x7E4c07D8304E6D3Ef1058a0F534186C043724e4f |
-| StakingRouterETHLido proxy       |                                            |
-| StakingRouterETHMorpho proxy     |                                            |
-| StakingRouterETHEtherfi proxy    |                                            |
-| StakingRouterETHRocketPool proxy |                                            |
-| StakingRouterLINK proxy          |                                            |
+| StakingRouterETHLido proxy       | 0x3E754bcfB02D660e3EdD6364f7bC66f0865c3651 |
+| StakingRouterETHMorpho proxy     | 0xc579F00dF7080f9BB107BD7e4a308a2d51394673 |
+| StakingRouterETHEtherfi proxy    | 0x46f4F6a569F991BECA6181a7D65d78c84ED13707 |
+| StakingRouterETHRocketPool proxy | 0x10f2203a8202f847EA6fB98a39E0A2578B4E6285 |
+| StakingRouterLINK proxy          | 0xb59e5fE60f4660bEA6f4FDAe695167a64C7F8b97 |
 
 # Mock LST platforms
 

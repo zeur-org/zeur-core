@@ -1,34 +1,33 @@
 # Zeur Light Paper
 
-This documentation describes the Zeur platform—a MiCA-compliant, zero-interest lending protocol built for the European crypto market.
-It is structured in alignment with [Uniswap](https://github.com/Uniswap/docs) documentation format.
+This documentation describes the Zeur platform, zero-interest lending protocol for MiCA-compliant EUR stablecoins built for the European crypto market.
 
 ## Project Layout
 
 Zeur documentation is organized into the following sections:
 
-* **Concepts** – General principles behind Zeur, such as zero-interest design, automated swap-repay, and vault strategy.
-* **Contracts** – Smart contract systems powering Zeur (ZeurVault, ZeurLending, AutomationExecutors).
-* **SDKs** – SDKs or libraries for interacting with Zeur (planned).
-* **APIs** – APIs for querying user positions, liquidation status, vault stats (planned).
+- **Concepts** – General principles behind Zeur, such as zero-interest design, automated swap-repay, and vault strategy.
+- **Contracts** – Smart contract systems powering Zeur (ZeurVault, ZeurLending, AutomationExecutors).
+- **SDKs** – SDKs or libraries for interacting with Zeur (planned).
+- **APIs** – APIs for querying user positions, liquidation status, vault stats (planned).
 
 Each section should include:
 
-* Overview
-* Guides
-* Technical Reference
+- Overview
+- Guides
+- Technical Reference
 
 ## Overview
 
 Each product overview should explain:
 
-* **High-level components:**
+- **High-level components:**
   Vault system, Euro-backed stablecoin lending (EURC, EURI), automation bots (stop-loss / take-profit), and spot swap-repay modules.
-* **High-level functionality:**
+- **High-level functionality:**
   Zero-interest crypto-backed loans, real-time vault tracking, auto-repay with profit extraction, permissionless stop-loss.
-* **Source code location:**
-  [Zeur GitHub Repository](https://github.com/zeur-org) *(placeholder link)*
-* **Artifacts:**
+- **Source code location:**
+  [Zeur GitHub Repository](https://github.com/zeur-org/zeur-core)
+- **Artifacts:**
   Smart contracts (on Etherscan/Sepolia), SDK/JS package (planned)
 
 Example: `/contracts/zeurVault/overview` – provides an intro to our main vault engine.
@@ -39,8 +38,8 @@ Guides should follow this structure:
 
 ### Principles
 
-* A single reusable concept per guide (e.g., setting a stop-loss, initiating a loan)
-* Three parts:
+- A single reusable concept per guide (e.g., setting a stop-loss, initiating a loan)
+- Three parts:
 
   1. **Introduction** – Explain the concept & purpose
   2. **Step-by-step code walkthrough**
@@ -62,13 +61,13 @@ All guides will reference live code examples from the Zeur example repo.
 
 Each module or SDK should have its exported interfaces documented. This can be generated using:
 
-* `solidity-docgen` for smart contracts
-* `typedoc` for any TypeScript SDKs
+- `solidity-docgen` for smart contracts
+- `typedoc` for any TypeScript SDKs
 
 Example:
 
-* `/contracts/zeurVault/reference` – Documented functions, structs, and events
-* `/sdk/zeur-js/reference` – Coming soon
+- `/contracts/zeurVault/reference` – Documented functions, structs, and events
+- `/sdk/zeur-js/reference` – Coming soon
 
 ## How to Create Technical Reference
 
@@ -92,8 +91,9 @@ npx typedoc --out docs src/index.ts
 1. Create `.env` with `APPLICATION_ID` and `API_KEY`
 2. Update `config.json` with your:
 
-   * `start_url`: [https://zeur.gitbook.io/zeur](https://zeur.gitbook.io/zeur)
-   * `index_name`: `zeur-docs`
+   - `start_url`: [https://zeur.gitbook.io/zeur](https://zeur.gitbook.io/zeur)
+   - `index_name`: `zeur-docs`
+
 3. Run:
 
 ```bash
@@ -125,4 +125,5 @@ yarn build
 ```
 
 ## Deployment
+
 Deployed automatically via Vercel on `main` branch merge.

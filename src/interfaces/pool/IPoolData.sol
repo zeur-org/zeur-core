@@ -9,6 +9,7 @@ interface IPoolData {
         address colToken;
         address debtToken;
         address tokenVault;
+        uint256 price;
         uint256 supplyCap;
         uint256 borrowCap;
         uint256 totalSupply; // total supply of the asset, used for both collateral and EUR assets

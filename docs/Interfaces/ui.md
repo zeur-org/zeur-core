@@ -47,6 +47,7 @@ Returned by `getAssetData(asset)`; combines configuration + live metrics, standa
 | ------------------------ | ------------------- | ------------------------------------------------------------------------------ | ---------- | ---- |
 | `assetType`              | `AssetType`         | Collateral vs. Debt                                                            | ✅         | ✅   |
 | `asset`                  | `address`           | Underlying token address                                                       | ✅         | ✅   |
+| `price`                  | `uint256`           | Current price from Chainlink oracle (8 decimals, USD)                          | ✅         | ✅   |
 | `supplyCap`              | `uint256`           | Max total that can be supplied into this market                                | ✅         | ✅   |
 | `borrowCap`              | `uint256`           | Max total that can be borrowed (for debt) or borrowed against (for collateral) | ✅         | ✅   |
 | `totalSupply`            | `uint256`           | Current total supplied                                                         | ✅         | ✅   |

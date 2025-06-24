@@ -77,10 +77,14 @@ contract PoolData is
         PoolDataStorage storage $ = _getPoolDataStorage();
         AssetData memory assetData;
         assetData.assetType = $._pool.getAssetType(asset);
+        assetData.asset = asset;
+
         if (assetData.assetType == IPool.AssetType.Collateral) {
             IPool.CollateralConfiguration memory config = $
                 ._pool
                 .getCollateralAssetConfiguration(asset);
+            assetData.price = $._oracleManager.getAssetPrice(asset);
+
             assetData.colToken = config.colToken;
             // No debtToken
             assetData.tokenVault = config.tokenVault;
@@ -118,6 +122,7 @@ contract PoolData is
             IPool.DebtConfiguration memory config = $
                 ._pool
                 .getDebtAssetConfiguration(asset);
+            assetData.price = $._oracleManager.getAssetPrice(asset);
             assetData.colToken = config.colToken;
             assetData.debtToken = config.debtToken;
             // No tokenVault
@@ -131,6 +136,7 @@ contract PoolData is
             assetData.utilizationRate = assetData.totalSupply > 0
                 ? assetData.totalBorrow / assetData.totalSupply
                 : 0;
+            assetData.supplyRate = 550; // mock for EURC
             // TODO supplyRate is necessary? should be calculated offchain based on reward distributed last day/7 days/30 days ?
             // borrowRate = 0 since zero interest rate
             assetData.reserveFactor = config.reserveFactor;

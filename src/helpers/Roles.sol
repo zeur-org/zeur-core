@@ -31,6 +31,7 @@ library Roles {
     uint64 constant ROUTER_SETUP_ROLE = 6;
     uint64 constant ROUTER_ETH_VAULT_ROLE = 7;
     uint64 constant ROUTER_LINK_VAULT_ROLE = 8;
+    uint64 constant ORACLE_SETUP_ROLE = 9;
 
     string constant SETTING_MANAGER_ADMIN_ROLE_NAME =
         "SETTING_MANAGER_ADMIN_ROLE";
@@ -42,6 +43,7 @@ library Roles {
     string constant ROUTER_SETUP_ROLE_NAME = "ROUTER_SETUP_ROLE";
     string constant ROUTER_ETH_VAULT_ROLE_NAME = "ROUTER_ETH_VAULT_ROLE";
     string constant ROUTER_LINK_VAULT_ROLE_NAME = "ROUTER_LINK_VAULT_ROLE";
+    string constant ORACLE_SETUP_ROLE_NAME = "ORACLE_SETUP_ROLE";
 
     function getPoolSelectors() public pure returns (bytes4[] memory) {
         bytes4[] memory poolSelectors = new bytes4[](4);
@@ -201,5 +203,13 @@ library Roles {
         routerLinkVaultSelectors[0] = StakingRouterLINK.stake.selector;
         routerLinkVaultSelectors[1] = StakingRouterLINK.unstake.selector;
         return routerLinkVaultSelectors;
+    }
+
+    function getOracleSetupSelectors() public pure returns (bytes4[] memory) {
+        bytes4[] memory oracleSetupSelectors = new bytes4[](1);
+        oracleSetupSelectors[0] = ChainlinkOracleManager
+            .setChainlinkOracle
+            .selector;
+        return oracleSetupSelectors;
     }
 }

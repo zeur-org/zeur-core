@@ -52,8 +52,32 @@ set-roles:
 set-pool-admin:
 	forge script script/config/SetPoolAdmin.s.sol:SetPoolAdmin --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast
 
+set-eur-role:
+	forge script script/config/SetEurRole.s.sol:SetEurRole --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast
+
 upgrade-pool:
 	forge script script/UpgradePool.s.sol:UpgradePool --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi
 
 upgrade-pool-data:
 	forge script script/UpgradePoolData.s.sol:UpgradePoolData --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi
+
+set-mint-approve:
+	forge script script/config/SetMintApprove.s.sol:SetMintApprove --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast
+
+set-oracle:
+	forge script script/config/SetOracle.s.sol:SetOracle --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast
+
+deploy-mock-morpho:
+	forge script script/DeployMockLSTMorpho.s.sol:DeployMockLSTMorpho --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi
+
+deploy-mock-lido:
+	forge script script/DeployMockLSTLido.s.sol:DeployMockLSTLido --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi
+
+deploy-mock-etherfi:
+	forge script script/DeployMockLSTEtherfi.s.sol:DeployMockLSTEtherfi --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi
+
+deploy-mock-rocket-pool:
+	forge script script/DeployMockLSTRocketPool.s.sol:DeployMockLSTRocketPool --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi
+
+deploy-mock-stake-link:
+	forge script script/DeployMockLSTStakeLink.s.sol:DeployMockLSTStakeLink --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi

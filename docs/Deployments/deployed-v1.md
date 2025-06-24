@@ -32,37 +32,38 @@
 
 # Mock LST platforms
 
-| Contract                          | Address                                                                                                           |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| MockWETH (Morpho)                 |                                                                                                                   |
-| MockMorpho (Morpho)               |                                                                                                                   |
-| MockstETH (Lido)                  |                                                                                                                   |
-| MockLido (Lido)                   |                                                                                                                   |
-| MockEETH (Etherfi)                |                                                                                                                   |
-| MockRETH (Rocket Pool)            |                                                                                                                   |
-| MockDepositPool (Rocket Pool)     |                                                                                                                   |
-| MockProtocolSetting (Rocket Pool) |                                                                                                                   |
-| MockLINK (Stake LINK)             | 0x4e3bcaDaD85837Ea95c9a96FA21A339183Ad99DE (should use official token 0x779877A7B0D9E8603169DdbD7836e478b4624789) |
-| MockstLINK (Stake LINK)           |                                                                                                                   |
-| MockPriorityPool (Stake LINK)     |                                                                                                                   |
+| Contract                          | Address                                    |
+| --------------------------------- | ------------------------------------------ |
+| MockWETH (Morpho)                 | 0xC7062B4192e4bAbD979f50803DCCCF8131153E0C |
+| MockMorpho (Morpho)               | 0x8d9FEF6239024cC359eDd8D0B2EE9E801AaE6E78 |
+| MockstETH (Lido)                  | 0x66642E3344Ec349cb7DB250B2C667680a36AB399 |
+| MockWithdrawalQueue (Lido)        | 0x2124170Ef27e2338dDe023540F88A3eB2745F8da |
+| MockEETH (Etherfi)                | 0x38DbC0a33269d22D593f94aD9C4AC709DC31a119 |
+| MockLiquidityPool (Etherfi)       | 0xD021b66DdEa68ffA601409d6279416e258bfF13f |
+| MockRETH (Rocket Pool)            | 0x5554612481Eb85288EF72258762bF84898604696 |
+| MockDepositPool (Rocket Pool)     | 0xA9A924125898194011AD63878de080b472fd1C39 |
+| MockProtocolSetting (Rocket Pool) | 0x92b9B1A3a9B4ecE83850CE2D6369ff0240C0fA7c |
+| LINK (Stake LINK, official)       | 0x779877A7B0D9E8603169DdbD7836e478b4624789 |
+| MockstLINK (Stake LINK)           | 0xAA15d08954Cf6B22c8FC736D8C04cc402d107a90 |
+| MockPriorityPool (Stake LINK)     | 0x28BB674b54F16A1672c92707A74102C1F9fff9CC |
 
 # Implementation addresses:
 
-| Contract                        | Address                                    |
-| ------------------------------- | ------------------------------------------ |
-| Pool impl                       | 0xeb6aF08bbc93FF73182F67c8c01e5DC6Cb258b6d |
-| PoolData impl                   |                                            |
-| ProtocolAccessManager impl      |                                            |
-| ProtocolSettingManager impl     |                                            |
-| ChainlinkOracleManager impl     |                                            |
-| VaultETH impl                   | 0xE4D4eF27Ecb431AE7ad7D24F6A88CD2DA644BEC7 |
-| VaultLINK impl                  | 0xD009D58f6e363c1B9601428a46858D60D82CCB6c |
-| ColTokenETH impl                | 0x9A76B04216b7dB457E4cad38d3Fe7DB1855db90F |
-| ColTokenLINK impl               | 0x7E4c07D8304E6D3Ef1058a0F534186C043724e4f |
-| StakingRouterETHLido impl       |                                            |
-| StakingRouterETHMorpho impl     |                                            |
-| StakingRouterETHEtherfi impl    |                                            |
-| StakingRouterETHRocketPool impl |                                            |
-| StakingRouterLINK impl          |                                            |
-| ColEURC impl                    | 0x90B38a74c2d1636Cbc2335d432482b37144ff5E9 |
-| DebtEURC impl                   |                                            |
+| Contract                        | Address |
+| ------------------------------- | ------- |
+| Pool impl                       |         |
+| PoolData impl                   |         |
+| ProtocolAccessManager impl      |         |
+| ProtocolSettingManager impl     |         |
+| ChainlinkOracleManager impl     |         |
+| VaultETH impl                   |         |
+| VaultLINK impl                  |         |
+| ColTokenETH impl                |         |
+| ColTokenLINK impl               |         |
+| StakingRouterETHLido impl       |         |
+| StakingRouterETHMorpho impl     |         |
+| StakingRouterETHEtherfi impl    |         |
+| StakingRouterETHRocketPool impl |         |
+| StakingRouterLINK impl          |         |
+| ColEURC impl                    |         |
+| DebtEURC impl                   |         |

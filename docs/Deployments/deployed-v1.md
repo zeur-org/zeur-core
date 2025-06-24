@@ -45,3 +45,24 @@
 | MockLINK (Stake LINK)             | 0x4e3bcaDaD85837Ea95c9a96FA21A339183Ad99DE (should use official token 0x779877A7B0D9E8603169DdbD7836e478b4624789) |
 | MockstLINK (Stake LINK)           |                                                                                                                   |
 | MockPriorityPool (Stake LINK)     |                                                                                                                   |
+
+# Implementation addresses:
+
+| Contract                        | Address                                    |
+| ------------------------------- | ------------------------------------------ |
+| Pool impl                       | 0xeb6aF08bbc93FF73182F67c8c01e5DC6Cb258b6d |
+| PoolData impl                   |                                            |
+| ProtocolAccessManager impl      |                                            |
+| ProtocolSettingManager impl     |                                            |
+| ChainlinkOracleManager impl     |                                            |
+| VaultETH impl                   | 0xE4D4eF27Ecb431AE7ad7D24F6A88CD2DA644BEC7 |
+| VaultLINK impl                  | 0xD009D58f6e363c1B9601428a46858D60D82CCB6c |
+| ColTokenETH impl                | 0x9A76B04216b7dB457E4cad38d3Fe7DB1855db90F |
+| ColTokenLINK impl               | 0x7E4c07D8304E6D3Ef1058a0F534186C043724e4f |
+| StakingRouterETHLido impl       |                                            |
+| StakingRouterETHMorpho impl     |                                            |
+| StakingRouterETHEtherfi impl    |                                            |
+| StakingRouterETHRocketPool impl |                                            |
+| StakingRouterLINK impl          |                                            |
+| ColEURC impl                    | 0x90B38a74c2d1636Cbc2335d432482b37144ff5E9 |
+| DebtEURC impl                   |                                            |

@@ -6,10 +6,10 @@ This documentation describes the Zeur platform, zero-interest lending protocol f
 
 Zeur documentation is organized into the following sections:
 
-- **Concepts** – General principles behind Zeur, such as zero-interest design, automated swap-repay, and vault strategy.
-- **Contracts** – Smart contract systems powering Zeur (ZeurVault, ZeurLending, AutomationExecutors).
-- **SDKs** – SDKs or libraries for interacting with Zeur (planned).
-- **APIs** – APIs for querying user positions, liquidation status, vault stats (planned).
+- **Contracts** – Smart contract systems powering Zeur (Mechanism, Borrow, Collateral, Vault, Managements, etc...).
+- **Deployments** – Deployed Zeur contract address (Borrow, Collateral, Vault, Managements, etc...).
+- **Interface** – A single entry point to fetch market-level and user-level data in one call.
+- **Roles** – Roles and functions of each core contract, etc.
 
 Each section should include:
 
@@ -22,15 +22,15 @@ Each section should include:
 Each product overview should explain:
 
 - **High-level components:**
-  Vault system, Euro-backed stablecoin lending (EURC, EURI), automation bots (stop-loss / take-profit), and spot swap-repay modules.
+  Vault system, Euro-backed stablecoin borrowing (EURC), automation management (stop-loss / take-profit), and spot swap-repay modules.
 - **High-level functionality:**
-  Zero-interest crypto-backed loans, real-time vault tracking, auto-repay with profit extraction, permissionless stop-loss.
+  Zero-interest crypto-backed borrow and lend, real-time vault tracking, auto-repay with profit extraction, permissionless stop-loss.
 - **Source code location:**
-  [Zeur GitHub Repository](https://github.com/zeur-org/zeur-core)
+  [Zeur GitHub Repository](https://github.com/zeur-org/zeur-core/tree/master/docs/Contracts)
 - **Artifacts:**
-  Smart contracts (on Etherscan/Sepolia), SDK/JS package (planned)
+  Smart contracts (on Etherscan/Sepolia), SDK/JS package (planned), Oracle, Data feeds, Data streams and etc(on Chainlink), AI agent(on ElizaOS)
 
-Example: `/contracts/zeurVault/overview` – provides an intro to our main vault engine.
+Example: `/contracts/02-core-concepts.md` – provides an intro to our main core engine.
 
 ## Guides
 
@@ -49,7 +49,7 @@ Guides should follow this structure:
 
 | Title                        | Description                                         |
 | ---------------------------- | --------------------------------------------------- |
-| Getting Your First Zeur Loan | Borrow EURC against ETH collateral with 0% interest |
+| Getting Your First Zeur Borrow | Borrow EURC against ETH collateral with 0% interest |
 | Setting a Stop-Loss          | Set automatic repayment if the price drops          |
 | Triggering a Take-Profit     | Lock in gains with auto-deleveraging                |
 | Spot Swap-Repay              | Instantly repay by swapping collateral to EURC      |
@@ -66,7 +66,7 @@ Each module or SDK should have its exported interfaces documented. This can be g
 
 Example:
 
-- `/contracts/zeurVault/reference` – Documented functions, structs, and events
+- `/contracts/08-vault-integration.md` – Documented functions, structs, and events
 - `/sdk/zeur-js/reference` – Coming soon
 
 ## How to Create Technical Reference

@@ -2,7 +2,7 @@
 
 This documentation describes the Zeur platform, zero-interest lending protocol for MiCA-compliant EUR stablecoins built for the European crypto market.
 
-#### [Zeur Platform](https://www.zeur.org/dashboard) | [Pitchdeck](https://www.figma.com/deck/qh8pd4Bi2xjpY9mNldOTi6) | [Demo video]()
+#### [Zeur Platform](https://www.zeur.org/dashboard) | [Pitchdeck](https://www.figma.com/deck/CmaR3CCAjsUcXbZdqYWKfq) | [Demo video]()
 
 ## Project Layout
 

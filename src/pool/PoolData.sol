@@ -12,6 +12,7 @@ import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IER
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {AccessManagedUpgradeable} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
+import {ETH_ADDRESS} from "../helpers/Constants.sol";
 
 contract PoolData is
     Initializable,
@@ -101,7 +102,9 @@ contract PoolData is
             assetData.liquidationBonus = config.liquidationBonus;
             assetData.liquidationProtocolFee = config.liquidationProtocolFee;
             assetData.reserveFactor = config.reserveFactor;
-            assetData.decimals = IERC20Metadata(asset).decimals();
+            assetData.decimals = asset == ETH_ADDRESS
+                ? 18 // ETH has 18 decimals
+                : IERC20Metadata(asset).decimals();
             assetData.isFrozen = config.isFrozen;
             assetData.isPaused = config.isPaused;
             // StakedTokens data
@@ -137,7 +140,6 @@ contract PoolData is
                 ? assetData.totalBorrow / assetData.totalSupply
                 : 0;
             assetData.supplyRate = 550; // mock for EURC
-            // TODO supplyRate is necessary? should be calculated offchain based on reward distributed last day/7 days/30 days ?
             // borrowRate = 0 since zero interest rate
             assetData.reserveFactor = config.reserveFactor;
             assetData.decimals = IERC20Metadata(asset).decimals();

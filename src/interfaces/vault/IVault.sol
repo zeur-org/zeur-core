@@ -10,11 +10,17 @@ interface IVault {
     error Vault_InvalidStakingRouter(address router);
     error Vault_StakingRouterAlreadyAdded(address router);
     error Vault_StakingRouterAlreadyRemoved(address router);
+    error Vault_HarvestYieldFailed();
 
     event StakingRouterAdded(address indexed router);
     event StakingRouterRemoved(address indexed router);
     event CurrentStakingRouterUpdated(address indexed router);
     event CurrentUnstakingRouterUpdated(address indexed router);
+    event YieldHarvested(
+        address indexed router,
+        address indexed debtAsset,
+        uint256 amount
+    );
 
     /// @notice Register a new staking router for an asset
     /// @param router  Address of the StakingRouter
@@ -53,4 +59,6 @@ interface IVault {
 
     /// @notice Force a rebalance across routers (called by Keeper or Manager)
     function rebalance() external;
+
+    /// @notice Harvest yield from the vault
 }

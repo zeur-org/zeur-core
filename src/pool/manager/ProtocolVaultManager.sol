@@ -68,4 +68,43 @@ contract ProtocolVaultManager is
     }
 
     function rebalance() external {}
+
+    function harvestYield(
+        address router,
+        address debtAsset
+    ) external restricted returns (uint256 debtReceived) {
+        VaultLINKStorage storage $ = _getVaultLINKStorage();
+
+        IStakingRouter stakingRouter = IStakingRouter(router);
+        address lstToken = stakingRouter.getStakedToken();
+        uint256 underlyingAmount = stakingRouter.getTotalStakedUnderlying();
+        uint256 lstAmount = IERC20(lstToken).balanceOf(address(this));
+        uint256 yieldAmount = lstAmount - underlyingAmount;
+
+        // Swap yield amount of LST to EURC, then transfer EURC to colEURC
+        if (yieldAmount == 0) return 0;
+
+        // Perform the swap
+        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
+            .ExactInputSingleParams({
+                tokenIn: lstToken,
+                tokenOut: debtAsset,
+                fee: 0,
+                recipient: address(this),
+                deadline: block.timestamp + 300, // 5 minutes
+                amountIn: yieldAmount,
+                amountOutMinimum: 0, // Need slippage protection for prod
+                sqrtPriceLimitX96: 0
+            });
+
+        try
+            ISwapRouter($._yieldConfig.swapRouter).exactInputSingle(params)
+        returns (uint256 amountOut) {
+            debtReceived = amountOut;
+        } catch {
+            revert Vault_HarvestYieldFailed();
+        }
+
+        emit YieldHarvested(router, debtAsset, debtReceived);
+    }
 }

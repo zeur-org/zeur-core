@@ -81,3 +81,15 @@ deploy-mock-rocket-pool:
 
 deploy-mock-stake-link:
 	forge script script/DeployMockLSTStakeLink.s.sol:DeployMockLSTStakeLink --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi
+
+setup-vault-role:
+	forge script script/config/SetupVaultRole.s.sol:SetupVaultRole --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast
+
+setup-router-role:
+	forge script script/config/SetupRouterRole.s.sol:SetupRouterRole --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast
+
+setup-col-token-role:
+	forge script script/config/SetupColTokenRole.s.sol:SetupColTokenRole --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast
+
+upgrade-vault-link:
+	forge script script/UpgradeVaultLINK.s.sol:UpgradeVaultLINK --rpc-url sepolia --private-key ${PRIVATE_KEY} --broadcast --verify --etherscan-api-key ${ETHERSCAN_API_KEY} --ffi

@@ -140,5 +140,28 @@ contract VaultETH is
         unstakingRouter.unstake(to, lstAmount);
     }
 
+    function harvestYield(
+        IStakingRouter router
+    ) external restricted returns (address, uint256) {
+        VaultETHStorage storage $ = _getVaultETHStorage();
+        if (!$._stakingRouters.contains(address(router)))
+            revert Vault_InvalidStakingRouter(address(router));
+
+        (address lstToken, uint256 exchangeRate) = router
+            .getStakedTokenAndExchangeRate();
+
+        uint256 underlyingAmount = router.getTotalStakedUnderlying();
+        uint256 lstAmount = IERC20(lstToken).balanceOf(address(this));
+        uint256 yieldAmount = (lstAmount * exchangeRate) /
+            1e18 -
+            underlyingAmount;
+
+        if (yieldAmount == 0) return (address(0), 0);
+
+        IERC20(lstToken).safeTransfer(msg.sender, yieldAmount);
+
+        return (lstToken, yieldAmount);
+    }
+
     function rebalance() external restricted {}
 }

@@ -1,4 +1,4 @@
-# Zeur Light Paper
+# Zeur Overview
 
 This documentation describes the Zeur platform, zero-interest lending protocol for MiCA-compliant EUR stablecoins built for the European crypto market.
 
@@ -49,13 +49,13 @@ Guides should follow this structure:
 
 ### Example Guide Ideas:
 
-| Title                        | Description                                         |
-| ---------------------------- | --------------------------------------------------- |
+| Title                          | Description                                         |
+| ------------------------------ | --------------------------------------------------- |
 | Getting Your First Zeur Borrow | Borrow EURC against ETH collateral with 0% interest |
-| Setting a Stop-Loss          | Set automatic repayment if the price drops          |
-| Triggering a Take-Profit     | Lock in gains with auto-deleveraging                |
-| Spot Swap-Repay              | Instantly repay by swapping collateral to EURC      |
-| Deploying a Vault via SDK    | How to integrate vault creation in dApps            |
+| Setting a Stop-Loss            | Set automatic repayment if the price drops          |
+| Triggering a Take-Profit       | Lock in gains with auto-deleveraging                |
+| Spot Swap-Repay                | Instantly repay by swapping collateral to EURC      |
+| Deploying a Vault via SDK      | How to integrate vault creation in dApps            |
 
 All guides will reference live code examples from the Zeur example repo.
 

@@ -6,6 +6,7 @@
 | PoolData proxy               | 0x85Bfcc053D4F969C168424B8cD16Fb426f565866 |
 | ProtocolAccessManager proxy  | 0xae9b4a631fA11296ca7208A55621D7Ef162eC772 |
 | ProtocolSettingManager proxy | 0xDE41E4f95c858dBD25fEcc082BF05d787C1d2c7D |
+| ProtocolVaultManager proxy   | 0x43E499Ff283a556f211DD8a9e17bA7E63cac7a6B |
 | ChainlinkOracleManager proxy | 0xE42162d39a17400Eb2E3b67c3a3CD8d9d12a7154 |
 
 # Debt contracts

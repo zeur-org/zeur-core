@@ -86,9 +86,9 @@ Returned by `getUserData(user)`; aggregates totals plus per-asset breakdown.
 
 | Field                         | Type                   | Description                                                                    |
 | ----------------------------- | ---------------------- | ------------------------------------------------------------------------------ |
-| `totalCollateralValue`        | `uint256`              | Sum of all collateral (in base currency, e.g. EURC)                            |
-| `totalDebtValue`              | `uint256`              | Sum of all debt (in EURC)                                                      |
-| `availableBorrowsValue`       | `uint256`              | How much more the user can still borrow (in EURC)                              |
+| `totalCollateralValue`        | `uint256`              | Sum of all collateral (in base currency USD)                                   |
+| `totalDebtValue`              | `uint256`              | Sum of all debt (in USD)                                                       |
+| `availableBorrowsValue`       | `uint256`              | How much more the user can still borrow (in USD)                               |
 | `currentLiquidationThreshold` | `uint256`              | Weighted average threshold across enabled collateral                           |
 | `ltv`                         | `uint256`              | Weighted average LTV across enabled collateral                                 |
 | `healthFactor`                | `uint256`              | = `(collateralValue × threshold) / debtValue` (18-decimals; <1 → liquidatable) |

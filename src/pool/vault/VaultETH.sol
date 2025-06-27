@@ -22,6 +22,7 @@ contract VaultETH is
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
+    /// @custom:storage-location erc7201:Zeur.storage.VaultETH
     struct VaultETHStorage {
         IStakingRouter _currentStakingRouter;
         IStakingRouter _currentUnstakingRouter;
@@ -140,24 +141,26 @@ contract VaultETH is
         unstakingRouter.unstake(to, lstAmount);
     }
 
-    function harvestYield(
-        IStakingRouter router
-    ) external restricted returns (address, uint256) {
+    // TODO add restrict after testing
+    function harvestYield(address router) external returns (address, uint256) {
         VaultETHStorage storage $ = _getVaultETHStorage();
-        if (!$._stakingRouters.contains(address(router)))
-            revert Vault_InvalidStakingRouter(address(router));
+        if (!$._stakingRouters.contains(router))
+            revert Vault_InvalidStakingRouter(router);
 
-        (address lstToken, uint256 exchangeRate) = router
+        (address lstToken, uint256 exchangeRate) = IStakingRouter(router)
             .getStakedTokenAndExchangeRate();
+        uint256 underlyingAmount = IStakingRouter(router)
+            .getTotalStakedUnderlying();
 
-        uint256 underlyingAmount = router.getTotalStakedUnderlying();
         uint256 lstAmount = IERC20(lstToken).balanceOf(address(this));
         uint256 yieldAmount = (lstAmount * exchangeRate) /
             1e18 -
             underlyingAmount;
 
-        if (yieldAmount == 0) return (address(0), 0);
+        if (yieldAmount == 0) return (lstToken, 0);
 
+        // Only ProtocolManager can call this function
+        // Transfer LST to ProtocolVaultManager
         IERC20(lstToken).safeTransfer(msg.sender, yieldAmount);
 
         return (lstToken, yieldAmount);

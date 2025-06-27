@@ -701,6 +701,21 @@ contract PoolTest is Test {
             eurToken.balanceOf(alice),
             aliceEURBalanceBefore + borrowAmount
         );
+
+        // Check withdraw after borrow
+        vm.startPrank(bob);
+        uint256 colEURBalanceBeforeWithdraw = colEUR.balanceOf(bob);
+        console.log("ColEUR before withdraw:", colEURBalanceBeforeWithdraw);
+
+        colEUR.approve(address(pool), 10000e6);
+        pool.withdraw(address(eurToken), 1000e6, bob);
+        uint256 colEURBalanceAfterWithdraw = colEUR.balanceOf(bob);
+        console.log("ColEUR after withdraw:", colEURBalanceAfterWithdraw);
+        assertEq(
+            colEURBalanceAfterWithdraw,
+            colEURBalanceBeforeWithdraw - 1000e6
+        );
+        vm.stopPrank();
     }
 
     function test_Repay(uint256 borrowAmount, uint256 repayAmount) public {

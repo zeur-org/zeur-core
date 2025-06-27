@@ -14,7 +14,7 @@ contract SetMintApprove is Script {
     function run() external {
         address userAddress = vm.envAddress("USER_ADDRESS");
         address mockTokenEURCAddress = vm.envAddress("EURC_ADDRESS");
-        address poolAddress = vm.envAddress("POOL_PROXY");
+        address poolAddress = vm.envAddress("POOL");
 
         if (mockTokenEURCAddress == address(0))
             revert SetMintApprove__MockTokenEURCNotSet();

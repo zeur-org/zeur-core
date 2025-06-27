@@ -18,6 +18,7 @@ contract StakingRouterLINK is
 {
     using SafeERC20 for IERC20;
 
+    /// @custom:storage-location erc7201:Zeur.storage.StakingRouterLINK
     struct StakingRouterLINKStorage {
         uint256 _totalStakedUnderlying;
         IERC20 _link; // Underlying token

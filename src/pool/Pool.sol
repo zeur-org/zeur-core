@@ -30,6 +30,7 @@ contract Pool is
     address private constant ETH_ADDRESS =
         0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
+    /// @custom:storage-location erc7201:Zeur.storage.Pool
     struct PoolStorage {
         IChainlinkOracleManager _oracleManager;
         EnumerableSet.AddressSet _collateralAssetList;

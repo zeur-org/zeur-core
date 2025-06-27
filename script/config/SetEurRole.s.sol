@@ -15,7 +15,7 @@ contract SetEurRole is Script {
         address accessManagerAddress = vm.envAddress("ACCESS_MANAGER");
         address colEURAddress = vm.envAddress("COLEUR_ADDRESS");
         address debtEURAddress = vm.envAddress("DEBTEUR_ADDRESS");
-        address poolAddress = vm.envAddress("POOL_PROXY");
+        address poolAddress = vm.envAddress("POOL");
 
         if (accessManagerAddress == address(0))
             revert SetEurRole__AccessManagerNotSet();

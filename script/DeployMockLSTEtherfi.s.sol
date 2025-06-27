@@ -2,7 +2,7 @@
 pragma solidity ^0.8.30;
 
 import {Script, console} from "forge-std/Script.sol";
-import {MockEETH, MockLiquidityPool} from "../../src/mock/MockEtherfi.sol";
+import {MockEETH, MockLiquidityPool} from "../src/mock/MockEtherfi.sol";
 
 contract DeployMockLSTEtherfi is Script {
     function run() external {

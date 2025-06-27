@@ -3,22 +3,21 @@ pragma solidity ^0.8.30;
 
 import {Script, console} from "forge-std/Script.sol";
 import {Upgrades, Options} from "@openzeppelin/foundry-upgrades/Upgrades.sol";
-import {PoolData} from "../src/pool/PoolData.sol";
+import {ColEUR} from "../src/pool/tokenization/ColEUR.sol";
 
-contract UpgradePoolData is Script {
-    address poolDataProxy = vm.envAddress("POOL_DATA");
+contract UpgradeColEUR is Script {
+    address colEURProxy = vm.envAddress("COLEUR_ADDRESS");
 
     function run() external {
-        vm.startBroadcast();
-
         // Build an Options struct that disables *all* validations
         Options memory opts;
         opts.unsafeSkipAllChecks = true;
 
+        vm.startBroadcast();
         // Now perform the upgrade with zero checks
         Upgrades.upgradeProxy(
-            poolDataProxy,
-            "PoolData.sol:PoolData", // path to your new implementation
+            colEURProxy,
+            "ColEUR.sol:ColEUR", // path to your new implementation
             "", // no initialize call
             opts, // <-- skips all checks
             msg.sender // call as the proxy-admin

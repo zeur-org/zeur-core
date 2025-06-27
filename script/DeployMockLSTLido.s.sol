@@ -2,7 +2,7 @@
 pragma solidity ^0.8.30;
 
 import {Script, console} from "forge-std/Script.sol";
-import {MockLido, MockWithdrawalQueue} from "../../src/mock/MockLido.sol";
+import {MockLido, MockWithdrawalQueue} from "../src/mock/MockLido.sol";
 
 contract DeployMockLSTLido is Script {
     function run() external {

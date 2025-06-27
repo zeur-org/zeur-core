@@ -15,6 +15,7 @@ contract DeployColEUR is Script {
         string memory name = vm.envString("COLEUR_NAME");
         string memory symbol = vm.envString("COLEUR_SYMBOL");
         address assetEUR = vm.envAddress("COLEUR_ASSET");
+        address pool = vm.envAddress("POOL");
 
         if (initialAuthority == address(0))
             revert DeployColEUR__InitialAuthorityNotSet();
@@ -31,7 +32,8 @@ contract DeployColEUR is Script {
                 initialAuthority,
                 name,
                 symbol,
-                assetEUR
+                assetEUR,
+                pool
             )
         );
 

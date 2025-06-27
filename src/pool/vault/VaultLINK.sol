@@ -21,6 +21,7 @@ contract VaultLINK is
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
+    /// @custom:storage-location erc7201:Zeur.storage.VaultLINK
     struct VaultLINKStorage {
         IERC20 _link; // Underlying token
         IStakingRouter _currentStakingRouter;
@@ -139,25 +140,27 @@ contract VaultLINK is
         unstakingRouter.unstake(to, amount);
     }
 
-    function harvestYield(
-        IStakingRouter router
-    ) external restricted returns (address, uint256) {
+    // TODO add restrict after testing
+    function harvestYield(address router) external returns (address, uint256) {
         VaultLINKStorage storage $ = _getVaultLINKStorage();
-        if (!$._stakingRouters.contains(address(router)))
-            revert Vault_InvalidStakingRouter(address(router));
+        if (!$._stakingRouters.contains(router))
+            revert Vault_InvalidStakingRouter(router);
 
-        (address lstToken, uint256 exchangeRate) = router
+        (address lstToken, uint256 exchangeRate) = IStakingRouter(router)
             .getStakedTokenAndExchangeRate();
-
-        uint256 underlyingAmount = router.getTotalStakedUnderlying();
+        uint256 underlyingAmount = IStakingRouter(router)
+            .getTotalStakedUnderlying();
         uint256 lstAmount = IERC20(lstToken).balanceOf(address(this));
         uint256 yieldAmount = (lstAmount * exchangeRate) /
             1e18 -
             underlyingAmount;
 
-        if (yieldAmount == 0) return (address(0), 0);
+        if (yieldAmount == 0) return (lstToken, 0);
 
+        // Transfer lstToken back to ProtocolVaultManager
         IERC20(lstToken).safeTransfer(msg.sender, yieldAmount);
+
+        emit YieldHarvested(address(router), lstToken, yieldAmount);
 
         return (lstToken, yieldAmount);
     }

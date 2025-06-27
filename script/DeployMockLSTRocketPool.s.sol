@@ -2,7 +2,7 @@
 pragma solidity ^0.8.30;
 
 import {Script, console} from "forge-std/Script.sol";
-import {MockRETH, MockRocketDepositPool, MockRocketDAOSettings} from "../../src/mock/MockRocketPool.sol";
+import {MockRETH, MockRocketDepositPool, MockRocketDAOSettings} from "../src/mock/MockRocketPool.sol";
 
 contract DeployMockLSTRocketPool is Script {
     function run() external {

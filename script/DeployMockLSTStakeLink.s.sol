@@ -2,7 +2,7 @@
 pragma solidity ^0.8.30;
 
 import {Script, console} from "forge-std/Script.sol";
-import {MockstLINK, MockPriorityPool} from "../../src/mock/MockStakeLink.sol";
+import {MockstLINK, MockPriorityPool} from "../src/mock/MockStakeLink.sol";
 
 contract DeployMockLSTStakeLink is Script {
     error DeployMockLSTStakeLink__LinkTokenNotSet();

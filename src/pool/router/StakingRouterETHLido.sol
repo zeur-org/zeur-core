@@ -19,6 +19,7 @@ contract StakingRouterETHLido is
 {
     using SafeERC20 for IERC20;
 
+    /// @custom:storage-location erc7201:Zeur.storage.StakingRouterETHLido
     struct StakingRouterETHLidoStorage {
         uint256 _totalStakedUnderlying;
         address _underlyingToken; // Underlying token

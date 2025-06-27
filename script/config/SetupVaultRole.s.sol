@@ -15,7 +15,7 @@ contract SetupVaultRole is Script {
         address vaultETHAddress = vm.envAddress("VAULT_ETH");
         address vaultLINKAddress = vm.envAddress("VAULT_LINK");
         address accessManagerAddress = vm.envAddress("ACCESS_MANAGER");
-        address poolAddress = vm.envAddress("POOL_PROXY");
+        address poolAddress = vm.envAddress("POOL");
 
         if (vaultETHAddress == address(0)) revert SetupVaultRole__VaultNotSet();
         if (vaultLINKAddress == address(0))

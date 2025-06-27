@@ -13,6 +13,7 @@ contract ProtocolSettingManager is
     UUPSUpgradeable,
     IProtocolSettingManager
 {
+    /// @custom:storage-location erc7201:Zeur.storage.ProtocolSettingManager
     struct ProtocolSettingManagerStorage {
         IPool _pool;
     }

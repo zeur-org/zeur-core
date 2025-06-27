@@ -274,7 +274,8 @@ contract TestSetupLocalHelpers is Script {
             address(protocolVaultManagerImpl),
             abi.encodeWithSelector(
                 ProtocolVaultManager.initialize.selector,
-                address(coreContracts.accessManager)
+                address(coreContracts.accessManager),
+                address(coreContracts.pool)
             )
         );
 
@@ -322,7 +323,8 @@ contract TestSetupLocalHelpers is Script {
                 address(coreContracts.accessManager),
                 "Collateral EUR",
                 "colEUR",
-                IERC20(address(mockContracts.eurToken))
+                IERC20(address(mockContracts.eurToken)),
+                address(coreContracts.pool)
             )
         );
 

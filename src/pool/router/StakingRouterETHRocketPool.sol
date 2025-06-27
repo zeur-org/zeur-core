@@ -21,6 +21,7 @@ contract StakingRouterETHRocketPool is
     using SafeERC20 for IERC20;
     using SafeERC20 for IRETH;
 
+    /// @custom:storage-location erc7201:Zeur.storage.StakingRouterETHRocketPool
     struct StakingRouterETHRocketPoolStorage {
         uint256 _totalStakedUnderlying;
         address _underlyingToken; // Underlying token

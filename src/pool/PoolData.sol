@@ -20,6 +20,7 @@ contract PoolData is
     UUPSUpgradeable,
     IPoolData
 {
+    /// @custom:storage-location erc7201:Zeur.storage.PoolData
     struct PoolDataStorage {
         IPool _pool;
         IChainlinkOracleManager _oracleManager;

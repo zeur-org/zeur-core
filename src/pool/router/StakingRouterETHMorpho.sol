@@ -20,6 +20,7 @@ contract StakingRouterETHMorpho is
     using SafeERC20 for IERC20;
     using SafeERC20 for IMorphoVault;
 
+    /// @custom:storage-location erc7201:Zeur.storage.StakingRouterETHMorpho
     struct StakingRouterETHMorphoStorage {
         uint256 _totalStakedUnderlying;
         IWETH _wETH; // Underlying token

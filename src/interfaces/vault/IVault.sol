@@ -57,8 +57,10 @@ interface IVault {
     /// @param amount  Amount of ETH equivalent to unstake
     function unlockCollateral(address to, uint256 amount) external;
 
+    /// @notice Harvest yield from the vault
+    /// @param router  Address of the StakingRouter
+    function harvestYield(address router) external returns (address, uint256);
+
     /// @notice Force a rebalance across routers (called by Keeper or Manager)
     function rebalance() external;
-
-    /// @notice Harvest yield from the vault
 }

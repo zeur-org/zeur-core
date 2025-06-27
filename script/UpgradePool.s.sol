@@ -6,7 +6,7 @@ import {Upgrades, Options} from "@openzeppelin/foundry-upgrades/Upgrades.sol";
 import {Pool} from "../src/pool/Pool.sol";
 
 contract UpgradePool is Script {
-    address poolProxy = vm.envAddress("POOL_PROXY");
+    address poolProxy = vm.envAddress("POOL");
 
     function run() external {
         vm.startBroadcast();

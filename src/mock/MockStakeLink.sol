@@ -7,12 +7,10 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title MockstLINK
- * @dev Simple ERC4626 vault token representing staked LINK
+ * @dev Simple ERC20 representing staked LINK
  */
-contract MockstLINK is ERC4626 {
-    constructor(
-        address _linkToken
-    ) ERC4626(IERC20(_linkToken)) ERC20("Staked LINK", "stLINK") {
+contract MockstLINK is ERC20 {
+    constructor(address _linkToken) ERC20("Staked LINK", "stLINK") {
         require(_linkToken != address(0), "Invalid LINK token address");
     }
 

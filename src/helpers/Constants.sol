@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-uint256 constant ETHER_TO_WEI = 1e18;
+uint256 constant ETH_TO_WEI = 1e18;
 uint256 constant HEALTH_FACTOR_BASE = 1e4; // 100%
 uint256 constant PRICE_PRECISION = 1e8; // 10^8 as Chainlink /USD pair price feed base
 uint256 constant BPS_BASE = 10000; // 100%

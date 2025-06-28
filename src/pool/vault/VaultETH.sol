@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {ETHER_TO_WEI} from "../../helpers/Constants.sol";
-import {IVaultETH} from "../../interfaces/vault/IVaultETH.sol";
+import {ETH_TO_WEI} from "../../helpers/Constants.sol";
+import {IVault} from "../../interfaces/vault/IVault.sol";
 import {IStakingRouter} from "../../interfaces/router/IStakingRouter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -17,7 +17,7 @@ contract VaultETH is
     AccessManagedUpgradeable,
     ReentrancyGuardUpgradeable,
     UUPSUpgradeable,
-    IVaultETH
+    IVault
 {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -133,7 +133,7 @@ contract VaultETH is
         (address lstToken, uint256 exchangeRate) = unstakingRouter
             .getStakedTokenAndExchangeRate();
 
-        uint256 lstAmount = (amount * ETHER_TO_WEI) / exchangeRate;
+        uint256 lstAmount = (amount * ETH_TO_WEI) / exchangeRate;
 
         // Approve the StakingRouter to use LST token
         // Unstake using the user's address as "to"

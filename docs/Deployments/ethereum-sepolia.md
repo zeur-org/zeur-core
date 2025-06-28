@@ -1,28 +1,16 @@
-# Ethereum Sepolia testnet
+# Ethereum Sepolia
 
 ## Core Contracts
 
-| Contract               | Address                                    |
-| ---------------------- | ------------------------------------------ |
-| Pool                   | 0x18EA450482Ca3CEbF9A8f2282685A907777bBD92 |
-| PoolData               | 0x85Bfcc053D4F969C168424B8cD16Fb426f565866 |
-| ProtocolAccessManager  | 0xae9b4a631fA11296ca7208A55621D7Ef162eC772 |
-| ProtocolSettingManager | 0xDE41E4f95c858dBD25fEcc082BF05d787C1d2c7D |
-| ProtocolVaultManager   | 0x43E499Ff283a556f211DD8a9e17bA7E63cac7a6B |
-| ChainlinkOracleManager | 0xE42162d39a17400Eb2E3b67c3a3CD8d9d12a7154 |
-
-## Debt contracts
-
-| Contract | Address                                    |
-| -------- | ------------------------------------------ |
-| ColEURC  | 0x114F3CaF71F47A7774ceC9904e77e0e7ea0cb011 |
-| DebtEURC | 0x8Cd770860726aab1151D6d9D7F05Fab9D4C68Ef4 |
-| MockEURC | 0xf170643aD2209E4cD9b17ddF8417D537E894d3e9 |
-
-## Collateral contracts
-
 | Contract                   | Address                                    |
 | -------------------------- | ------------------------------------------ |
+| Pool                       | 0x18EA450482Ca3CEbF9A8f2282685A907777bBD92 |
+| PoolData                   | 0x85Bfcc053D4F969C168424B8cD16Fb426f565866 |
+| ProtocolAccessManager      | 0xae9b4a631fA11296ca7208A55621D7Ef162eC772 |
+| ProtocolSettingManager     | 0xDE41E4f95c858dBD25fEcc082BF05d787C1d2c7D |
+| ProtocolVaultManager       | 0x43E499Ff283a556f211DD8a9e17bA7E63cac7a6B |
+| ChainlinkOracleManager     | 0xE42162d39a17400Eb2E3b67c3a3CD8d9d12a7154 |
+| Chainlink Automation       | 0x1429dC45f8116f4cbf14fC9820fE69Ee60173F93 |
 | VaultETH                   | 0xE4D4eF27Ecb431AE7ad7D24F6A88CD2DA644BEC7 |
 | VaultLINK                  | 0xD009D58f6e363c1B9601428a46858D60D82CCB6c |
 | ColTokenETH                | 0x9A76B04216b7dB457E4cad38d3Fe7DB1855db90F |
@@ -32,11 +20,14 @@
 | StakingRouterETHEtherfi    | 0x46f4F6a569F991BECA6181a7D65d78c84ED13707 |
 | StakingRouterETHRocketPool | 0x10f2203a8202f847EA6fB98a39E0A2578B4E6285 |
 | StakingRouterLINK          | 0xb59e5fE60f4660bEA6f4FDAe695167a64C7F8b97 |
+| ColEURC                    | 0x114F3CaF71F47A7774ceC9904e77e0e7ea0cb011 |
+| DebtEURC                   | 0x8Cd770860726aab1151D6d9D7F05Fab9D4C68Ef4 |
 
-## Mock LST platforms
+## Mock Contracts
 
 | Contract                          | Address                                    |
 | --------------------------------- | ------------------------------------------ |
+| MockEURC                          | 0xf170643aD2209E4cD9b17ddF8417D537E894d3e9 |
 | MockWETH (Morpho)                 | 0xC7062B4192e4bAbD979f50803DCCCF8131153E0C |
 | MockMorpho (Morpho)               | 0x8d9FEF6239024cC359eDd8D0B2EE9E801AaE6E78 |
 | MockstETH (Lido)                  | 0x66642E3344Ec349cb7DB250B2C667680a36AB399 |
@@ -49,11 +40,5 @@
 | LINK (official)                   | 0x779877A7B0D9E8603169DdbD7836e478b4624789 |
 | MockstLINK (Stake LINK)           | 0x826C3315958BA5F144334dcCD2F825b895d7A160 |
 | MockPriorityPool (Stake LINK)     | 0xB690aD3646987E83eD9b509447C7F42E34f5d5E2 |
-
-## External contracts:
-
-| Contract                    | Address                                    |
-| --------------------------- | ------------------------------------------ |
-| Uniswap V3 Router           | 0x3A9D48AB9751398BbFa63ad67599Bb04e4BdF98b |
-| Uniswap V3 Pair stLINK/EURC | 0x404C4999241EC2D10e451820d82d65E2Ec6E3630 |
-| Chainlink Automation        |                                            |
+| Uniswap V3 Router (official)      | 0x3A9D48AB9751398BbFa63ad67599Bb04e4BdF98b |
+| Uniswap V3 Pair stLINK/EURC       | 0xCF31DFf93CB82e6E9004a298Cc72e19dC60b5945 |

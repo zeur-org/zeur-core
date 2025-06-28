@@ -60,7 +60,7 @@ contract ProtocolVaultManager is
         address newImplementation
     ) internal override restricted {}
 
-    function distributeYield(address asset) external {
+    function distributeYield(address asset, uint256 amount) external {
         ProtocolVaultManagerStorage
             storage $ = _getProtocolVaultManagerStorage();
 
@@ -72,14 +72,15 @@ contract ProtocolVaultManager is
         if (colToken == address(0))
             revert ProtocolVaultManager__NotDebtAsset(asset);
 
-        uint256 amount = IERC20(asset).balanceOf(address(this));
+        if (amount == 0) amount = IERC20(asset).balanceOf(address(this));
+
         IERC20(asset).safeTransfer(colToken, amount);
 
         emit YieldDistributed(address(this), asset, colToken, amount);
     }
 
-    // TODO add restrict after testing
     function harvestYield(
+        address fromVault,
         address router,
         address debtAsset,
         address swapRouter
@@ -95,7 +96,7 @@ contract ProtocolVaultManager is
         if (colToken == address(0))
             revert ProtocolVaultManager__NotDebtAsset(debtAsset);
 
-        IVault vault = IVault(debtConfiguration.colToken);
+        IVault vault = IVault(fromVault);
 
         // Harvest yield from vaultETH
         (address lstToken, uint256 yieldAmount) = vault.harvestYield(router);
@@ -118,6 +119,8 @@ contract ProtocolVaultManager is
         // Approve LST for Uniswap router
         IERC20(lstToken).forceApprove(swapRouter, yieldAmount);
 
+        emit YieldDistributed(router, debtAsset, colToken, debtReceived);
+
         try ISwapRouter(swapRouter).exactInputSingle(params) returns (
             uint256 amountOut
         ) {
@@ -129,8 +132,6 @@ contract ProtocolVaultManager is
                 swapRouter
             );
         }
-
-        emit YieldDistributed(router, debtAsset, colToken, debtReceived);
     }
 
     function rebalance() external restricted {

@@ -1,4 +1,4 @@
-# ZEUR Vault System and Liquid Staking Integration
+# Vault System and Liquid Staking Integration
 
 ## Overview
 

@@ -1,4 +1,4 @@
-# ZEUR Core Concepts
+# Core Concepts
 
 ## Key Terminology
 

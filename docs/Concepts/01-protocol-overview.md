@@ -1,4 +1,4 @@
-# ZEUR Protocol Overview
+# Protocol Overview
 
 ## What is ZEUR?
 
@@ -32,21 +32,7 @@ ZEUR is a decentralized lending protocol that enables users to borrow EUR-denomi
 
 ## Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        ZEUR Protocol                        │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │    Pool     │  │ Pool Data   │  │ Protocol Managers   │  │
-│  │ (Core Logic)│  │ (Queries)   │  │ (Administration)    │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘  │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │ Tokenization│  │   Vaults    │  │      Oracles        │  │
-│  │  (Wrappers) │  │(LST Staking)│  │   (Chainlink)       │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-```
+![image](../assets/zeur-flow.png)
 
 ## Core Components
 

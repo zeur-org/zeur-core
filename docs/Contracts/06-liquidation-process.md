@@ -1,4 +1,4 @@
-# ZEUR Liquidation Process
+# Liquidation Process
 
 ## Overview
 

@@ -1,4 +1,4 @@
-# ZEUR Tokenization System
+# Tokenization System
 
 ## Overview
 

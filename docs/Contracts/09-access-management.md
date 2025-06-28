@@ -1,4 +1,4 @@
-# ZEUR Access Management
+# Access Management
 
 ## Overview
 

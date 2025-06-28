@@ -1,4 +1,6 @@
-## UIPoolData Interface
+# PoolData
+
+## PoolData Interface
 
 A single entry point to fetch **market-level** and **user-level** data in one call. All getters are `view`/`pure` and return fully populated structs, so the UI only needs to hit this contract.
 

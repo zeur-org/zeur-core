@@ -1,4 +1,4 @@
-# ZEUR Borrowing and Lending
+# Borrowing and Lending
 
 ## Overview
 

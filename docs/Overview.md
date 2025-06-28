@@ -1,4 +1,4 @@
-# Zeur Overview
+# Overview
 
 This documentation describes the Zeur platform, zero-interest lending protocol for MiCA-compliant EUR stablecoins built for the European crypto market.
 

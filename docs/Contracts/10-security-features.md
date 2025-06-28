@@ -1,4 +1,4 @@
-# ZEUR Security Features
+# Security Features
 
 ## Overview
 

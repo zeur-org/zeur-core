@@ -1,4 +1,4 @@
-# ZEUR Yield Harvesting System
+# Yield Harvesting System
 
 ## Overview
 

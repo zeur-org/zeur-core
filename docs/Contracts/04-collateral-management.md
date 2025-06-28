@@ -1,4 +1,4 @@
-# ZEUR Collateral Management
+# Collateral Management
 
 ## Overview
 

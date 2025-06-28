@@ -1,3 +1,13 @@
+### The Problem We Solve
+
+Many crypto holders, particularly in Europe, view their assets as long-term investments. They don't want to sell, which would trigger a taxable event and cause them to miss out on potential future appreciation. However, they often need cash for major life purchases like a down payment on a house, a car, or other significant expenses.
+
+Their current options are very limited for real world spending:
+
+1.  **Borrow from DeFi (Aave/Compound):** Traditional DeFi lending has variable, often high-interest rates that can exceed standard consumer loans (which are ~4-7% in Europe). This makes borrowing for real-world expenses unpredictable and potentially expensive.
+2.  **Borrow from TradFi (Consumer/Mortgage Loan):** While rates can be lower (~3-5%), the process is slow, requires extensive paperwork, and doesn't leverage their crypto wealth.
+3.  **Use other "Zero-Interest" Protocols:** Services like Alchemix or Liquity are innovative but force borrowers to take out loans in a new, protocol-specific stablecoin (like `alUSD` or `LUSD`). These stablecoins lack the liquidity, trust, and direct off-ramps to be easily converted into Euros and used for real-life purchases. This creates a circular, self-contained crypto economy, not a bridge to the real world.
+
 ### The Idea: A Zero-Interest Loan Protocol for the Real EconomyAdd commentMore actions
 
 Our protocol is a decentralized lending platform where users can borrow real-world value against their crypto assets without paying any interest.
@@ -5,16 +15,6 @@ Our protocol is a decentralized lending platform where users can borrow real-wor
 Borrowers deposit yield-generating collateral like Ethereum (ETH), Chainlink (LINK), or Liquid Staking Tokens (LSTs) and in return, can borrow established, fiat-backed stablecoins like EURC.
 
 Instead of charging borrowers interest, the protocol puts their collateral to work in trusted, low-to-medium risk yield strategies (e.g., staking on Lido or Ether.fi, lending on Aave or Morpho, restaking on EigenLayer). The entire yield generated from this collateral is used to pay interest to the lenders who provided the EURC.
-
-### The Problem We Solve
-
-Many crypto holders, particularly in Europe, view their assets as long-term investments. They don't want to sell, which would trigger a taxable event and cause them to miss out on potential future appreciation. However, they often need cash for major life purchases like a down payment on a house, a car, or other significant expenses.
-
-Their current options are poor:
-
-1.  **Borrow from DeFi (Aave/Compound):** Traditional DeFi lending has variable, often high-interest rates that can exceed standard consumer loans (which are ~4-7% in Europe). This makes borrowing for real-world expenses unpredictable and potentially expensive.
-2.  **Borrow from TradFi (Consumer/Mortgage Loan):** While rates can be lower (~3-5%), the process is slow, requires extensive paperwork, and doesn't leverage their crypto wealth.
-3.  **Use other "Zero-Interest" Protocols:** Services like Alchemix or Liquity are innovative but force borrowers to take out loans in a new, protocol-specific stablecoin (like `alUSD` or `LUSD`). These stablecoins lack the liquidity, trust, and direct off-ramps to be easily converted into Euros and used for real-life purchases. This creates a circular, self-contained crypto economy, not a bridge to the real world.
 
 ### Our Solution: A Bridge to Real-World Spending
 

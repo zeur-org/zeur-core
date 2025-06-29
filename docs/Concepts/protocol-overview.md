@@ -2,7 +2,7 @@
 
 ## What is ZEUR?
 
-ZEUR is a decentralized lending protocol that enables users to borrow EUR-denominated stablecoins against crypto collateral while automatically earning staking rewards on their deposited assets. The protocol combines traditional lending mechanics with liquid staking token (LST) integration to maximize capital efficiency.
+ZEUR is a decentralized lending protocol that enables users to borrow EUR-denominated stablecoins against crypto collateral while paying no interest. Their collateral automatically earns staking rewards on their deposited assets and this yield is distributed to EUR lenders. The protocol combines traditional lending mechanics with liquid staking token (LST) integration to maximize capital efficiency and make EUR stablecoins affordable for everyone.
 
 ## Key Features
 

@@ -180,7 +180,10 @@ contract VaultETH is
         if (!$._stakingRouters.contains(toRouter))
             revert Vault_InvalidStakingRouter(toRouter);
 
+        address lstToken = IStakingRouter(fromRouter).getStakedToken();
+        IERC20(lstToken).forceApprove(address(fromRouter), amount);
         IStakingRouter(fromRouter).unstake(address(this), amount);
+
         IStakingRouter(toRouter).stake{value: amount}(address(this), amount);
 
         emit PositionRebalanced(fromRouter, toRouter, amount);

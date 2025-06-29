@@ -192,44 +192,4 @@ interface IPool {
     function getUserAccountData(
         address user
     ) external view returns (UserAccountData memory);
-
-    // function getUserConfiguration(address user) external view returns (uint256);
-
-    // function spotRepay(
-    //     address collateralAsset,
-    //     uint256 collateralAmount,
-    //     uint256 collateralMinPrice,
-    //     uint256 collateralMaxPrice,
-    //     address debtAsset,
-    //     uint256 debtAmount,
-    //     address from
-    // ) external;
-
-    // function setAutoRepay(
-    //     address collateralAsset,
-    //     uint256 collateralAmount,
-    //     uint256 collateralMinPrice,
-    //     uint256 collateralMaxPrice,
-    //     address debtAsset,
-    //     uint256 debtAmount,
-    //     address from
-    // ) external;
-
-    // function executeAutoRepay(
-    //     address collateralAsset,
-    //     uint256 collateralAmount,
-    //     uint256 collateralMinPrice,
-    //     uint256 collateralMaxPrice,
-    //     address debtAsset,
-    //     uint256 debtAmount,
-    //     address from
-    // ) external;
-
-    // function getCollateralAssetData(
-    //     address collateralAsset
-    // ) external view returns (uint256);
-
-    // function getDebtAssetData(
-    //     address debtAsset
-    // ) external view returns (uint256);
 }

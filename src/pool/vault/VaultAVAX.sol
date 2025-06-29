@@ -166,6 +166,4 @@ contract VaultAVAX is
 
         return (lstToken, yieldAmount);
     }
-
-    function rebalance() external restricted {}
 }

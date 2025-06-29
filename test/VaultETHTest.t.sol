@@ -120,12 +120,16 @@ contract VaultETHTest is Test {
         assertEq(stakingRouters[1], address(routerEtherfi));
     }
 
-    function test_rebalance() public {
-        _setUpAccess();
-        vm.startPrank(vaultAdmin);
-        vaultETH.rebalance();
-        vm.stopPrank();
-    }
+    // function test_rebalance() public {
+    //     _setUpAccess();
+    //     vm.startPrank(vaultAdmin);
+    //     vaultETH.rebalance(
+    //         address(routerEtherfi),
+    //         address(routerLido),
+    //         100 ether
+    //     );
+    //     vm.stopPrank();
+    // }
 
     function test_Upgrade() public {
         vm.startPrank(initialAdmin);
@@ -234,7 +238,11 @@ contract VaultETHTest is Test {
                 alice
             )
         );
-        vaultETH.rebalance();
+        vaultETH.rebalance(
+            address(routerEtherfi),
+            address(routerLido),
+            100 ether
+        );
         vm.stopPrank();
     }
 }

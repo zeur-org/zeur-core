@@ -129,7 +129,6 @@ library Roles {
         vaultSetupSelectors[9] = VaultLINK
             .updateCurrentUnstakingRouter
             .selector;
-        vaultSetupSelectors[10] = VaultLINK.rebalance.selector;
         return vaultSetupSelectors;
     }
 

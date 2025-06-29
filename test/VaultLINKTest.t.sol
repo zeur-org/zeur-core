@@ -115,13 +115,6 @@ contract VaultLINKTest is Test {
         assertEq(stakingRouters[0], address(routerLINK));
     }
 
-    function test_rebalance() public {
-        _setUpAccess();
-        vm.startPrank(vaultAdmin);
-        vaultLINK.rebalance();
-        vm.stopPrank();
-    }
-
     function test_Upgrade() public {
         // Grant role to alice
         vm.startPrank(initialAdmin);
@@ -223,18 +216,6 @@ contract VaultLINKTest is Test {
             )
         );
         vaultLINK.unlockCollateral(alice, 100 ether);
-        vm.stopPrank();
-    }
-
-    function testRevert_RebalanceNotAdmin() public {
-        vm.startPrank(alice);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IAccessManaged.AccessManagedUnauthorized.selector,
-                alice
-            )
-        );
-        vaultLINK.rebalance();
         vm.stopPrank();
     }
 }

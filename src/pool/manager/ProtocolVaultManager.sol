@@ -3,6 +3,7 @@ pragma solidity ^0.8.30;
 
 import {IPool} from "../../interfaces/pool/IPool.sol";
 import {IVault} from "../../interfaces/vault/IVault.sol";
+import {IVaultETH} from "../../interfaces/vault/IVaultETH.sol";
 import {IProtocolVaultManager} from "../../interfaces/pool/IProtocolVaultManager.sol";
 import {IStakingRouter} from "../../interfaces/router/IStakingRouter.sol";
 import {ISwapRouter} from "../../interfaces/swap/ISwapRouter.sol";
@@ -60,7 +61,13 @@ contract ProtocolVaultManager is
         address newImplementation
     ) internal override restricted {}
 
-    function distributeYield(address asset, uint256 amount) external {
+    /// @inheritdoc IProtocolVaultManager
+    /// @dev Callable from Chainlink Automation Keper
+    /// Used when we have EURC balance on this contract
+    function distributeYield(
+        address asset,
+        uint256 amount
+    ) external restricted {
         ProtocolVaultManagerStorage
             storage $ = _getProtocolVaultManagerStorage();
 
@@ -79,12 +86,14 @@ contract ProtocolVaultManager is
         emit YieldDistributed(address(this), asset, colToken, amount);
     }
 
+    /// @inheritdoc IProtocolVaultManager
+    /// @dev Callable from Chainlink Automation Keper
     function harvestYield(
         address fromVault,
         address router,
         address debtAsset,
         address swapRouter
-    ) external returns (uint256 debtReceived) {
+    ) external restricted returns (uint256 debtReceived) {
         // Check if the debt asset is supported
         ProtocolVaultManagerStorage
             storage $ = _getProtocolVaultManagerStorage();
@@ -134,7 +143,18 @@ contract ProtocolVaultManager is
         }
     }
 
-    function rebalance() external restricted {
-        // TODO: Implement rebalance
+    /// @inheritdoc IProtocolVaultManager
+    /// @dev Callable from ElizaOS
+    function rebalance(
+        address vault,
+        address fromRouter,
+        address toRouter,
+        uint256 amount
+    ) external restricted {
+        IVaultETH vaultToken = IVaultETH(vault);
+        // 1) Withdraw the LST from vault into this contract
+        vaultToken.rebalance(fromRouter, toRouter, amount);
+
+        emit PositionRebalanced(vault, fromRouter, toRouter, amount);
     }
 }

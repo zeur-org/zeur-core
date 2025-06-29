@@ -2,7 +2,7 @@
 pragma solidity ^0.8.30;
 
 import {ETH_TO_WEI} from "../../helpers/Constants.sol";
-import {IVault} from "../../interfaces/vault/IVault.sol";
+import {IVaultETH} from "../../interfaces/vault/IVaultETH.sol";
 import {IStakingRouter} from "../../interfaces/router/IStakingRouter.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -17,7 +17,7 @@ contract VaultETH is
     AccessManagedUpgradeable,
     ReentrancyGuardUpgradeable,
     UUPSUpgradeable,
-    IVault
+    IVaultETH
 {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -141,8 +141,9 @@ contract VaultETH is
         unstakingRouter.unstake(to, lstAmount);
     }
 
-    // TODO add restrict after testing
-    function harvestYield(address router) external returns (address, uint256) {
+    function harvestYield(
+        address router
+    ) external restricted returns (address, uint256) {
         VaultETHStorage storage $ = _getVaultETHStorage();
         if (!$._stakingRouters.contains(router))
             revert Vault_InvalidStakingRouter(router);
@@ -166,5 +167,22 @@ contract VaultETH is
         return (lstToken, yieldAmount);
     }
 
-    function rebalance() external restricted {}
+    ///@inheritdoc IVaultETH
+    function rebalance(
+        address fromRouter,
+        address toRouter,
+        uint256 amount
+    ) external restricted {
+        VaultETHStorage storage $ = _getVaultETHStorage();
+        if (!$._stakingRouters.contains(fromRouter))
+            revert Vault_InvalidStakingRouter(fromRouter);
+
+        if (!$._stakingRouters.contains(toRouter))
+            revert Vault_InvalidStakingRouter(toRouter);
+
+        IStakingRouter(fromRouter).unstake(address(this), amount);
+        IStakingRouter(toRouter).stake{value: amount}(address(this), amount);
+
+        emit PositionRebalanced(fromRouter, toRouter, amount);
+    }
 }

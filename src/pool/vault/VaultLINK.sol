@@ -140,8 +140,9 @@ contract VaultLINK is
         unstakingRouter.unstake(to, amount);
     }
 
-    // TODO add restrict after testing
-    function harvestYield(address router) external returns (address, uint256) {
+    function harvestYield(
+        address router
+    ) external restricted returns (address, uint256) {
         VaultLINKStorage storage $ = _getVaultLINKStorage();
         if (!$._stakingRouters.contains(router))
             revert Vault_InvalidStakingRouter(router);
@@ -164,6 +165,4 @@ contract VaultLINK is
 
         return (lstToken, yieldAmount);
     }
-
-    function rebalance() external restricted {}
 }

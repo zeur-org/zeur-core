@@ -2,13 +2,13 @@
 
 This documentation describes the Zeur platform, zero-interest lending protocol for MiCA-compliant EUR stablecoins built for the European crypto market.
 
-#### [Zeur Platform](https://www.zeur.org/dashboard) | [Pitchdeck](https://www.figma.com/deck/CmaR3CCAjsUcXbZdqYWKfq) | [Demo video](./)
+#### [Zeur Platform](https://www.zeur.org/dashboard) | [Pitchdeck](https://www.figma.com/deck/CmaR3CCAjsUcXbZdqYWKfq) | [Demo video](https://youtu.be/Ubt-k-e2Hw4)
 
 ## Project Layout
 
 Zeur documentation is organized into the following sections:
 
-* [**Contracts**](Contracts/) – Smart contract systems powering Zeur (Mechanism, Borrow, Collateral, Vault, Managements, etc...).
+* [**Contracts**](https://github.com/zeur-org/zeur-core/tree/master/script) – Smart contract systems powering Zeur (Mechanism, Borrow, Collateral, Vault, Managements, etc...).
 * [**Deployments**](https://github.com/zeur-org/zeur-core/tree/master/docs/Deployments) – Deployed Zeur contract address (Borrow, Collateral, Vault, Managements, etc...).
 * [**Interface**](https://github.com/zeur-org/zeur-core/tree/master/docs/Interfaces) – A single entry point to fetch market-level and user-level data in one call.
 * [**Roles**](https://github.com/zeur-org/zeur-core/tree/master/docs/Roles) – Roles and functions of each core contract, etc.

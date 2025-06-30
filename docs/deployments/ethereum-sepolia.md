@@ -10,6 +10,9 @@
 | ProtocolSettingManager     | [0xDE41E4f95c858dBD25fEcc082BF05d787C1d2c7D](https://sepolia.etherscan.io/address/0xDE41E4f95c858dBD25fEcc082BF05d787C1d2c7D) |
 | ProtocolVaultManager       | [0x43E499Ff283a556f211DD8a9e17bA7E63cac7a6B](https://sepolia.etherscan.io/address/0x43E499Ff283a556f211DD8a9e17bA7E63cac7a6B) |
 | ChainlinkOracleManager     | [0xE42162d39a17400Eb2E3b67c3a3CD8d9d12a7154](https://sepolia.etherscan.io/address/0xE42162d39a17400Eb2E3b67c3a3CD8d9d12a7154) |
+| Chainlink Automation       | [0x1429dC45f8116f4cbf14fC9820fE69Ee60173F93](https://sepolia.etherscan.io/address/0x1429dC45f8116f4cbf14fC9820fE69Ee60173F93) |
+| VaultETH                   | [0xE4D4eF27Ecb431AE7ad7D24F6A88CD2DA644BEC7](https://sepolia.etherscan.io/address/0xE4D4eF27Ecb431AE7ad7D24F6A88CD2DA644BEC7) |
+| VaultLINK                  | [0xD009D58f6e363c1B9601428a46858D60D82CCB6c](https://sepolia.etherscan.io/address/0xD009D58f6e363c1B9601428a46858D60D82CCB6c) |
 | ColTokenETH                | [0x9A76B04216b7dB457E4cad38d3Fe7DB1855db90F](https://sepolia.etherscan.io/address/0x9A76B04216b7dB457E4cad38d3Fe7DB1855db90F) |
 | ColTokenLINK               | [0x7E4c07D8304E6D3Ef1058a0F534186C043724e4f](https://sepolia.etherscan.io/address/0x7E4c07D8304E6D3Ef1058a0F534186C043724e4f) |
 | StakingRouterETHLido       | [0x3E754bcfB02D660e3EdD6364f7bC66f0865c3651](https://sepolia.etherscan.io/address/0x3E754bcfB02D660e3EdD6364f7bC66f0865c3651) |

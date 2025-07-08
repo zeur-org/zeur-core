@@ -149,12 +149,4 @@ ZEUR is a decentralized lending protocol that enables users to borrow EUR-denomi
 
 This overview provides a high-level understanding of ZEUR protocol. For detailed technical information, please refer to the specific concept documents:
 
-- [Core Concepts](./02-core-concepts.md)
-- [Tokenization System](./03-tokenization-system.md)
-- [Collateral Management](./04-collateral-management.md)
-- [Borrowing and Lending](./05-borrowing-lending.md)
-- [Liquidation Process](./06-liquidation-process.md)
-- [Oracle Integration](./07-oracle-integration.md)
-- [Vault and Staking](./08-vault-staking.md)
-- [Access Management](./09-access-management.md)
-- [Security Features](./10-security-features.md)
+- [Core Feature](https://github.com/zeur-org/zeur-core/tree/gitbook/docs/Core%20Feature)

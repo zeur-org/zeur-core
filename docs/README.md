@@ -1,124 +1,160 @@
-# Overview
+# Protocol Overview
 
-This documentation describes the Zeur platform, zero-interest lending protocol for MiCA-compliant EUR stablecoins built for the European crypto market.
+## What is ZEUR?
 
-#### [Zeur Platform](https://www.zeur.org/dashboard) | [Pitchdeck](https://www.figma.com/deck/CmaR3CCAjsUcXbZdqYWKfq) | [Demo video](https://youtu.be/Ubt-k-e2Hw4)
+ZEUR is a decentralized lending protocol that enables users to borrow EUR-denominated stablecoins against crypto collateral while paying no interest. Their collateral automatically earns staking rewards on their deposited assets and this yield is distributed to EUR lenders. The protocol combines traditional lending mechanics with liquid staking token (LST) integration to maximize capital efficiency and make EUR stablecoins affordable for everyone.
 
-## Project Layout
+## Key Features
 
-Zeur documentation is organized into the following sections:
+### 🏦 **Collateralized Lending**
 
-* [**Contracts**](https://github.com/zeur-org/zeur-core/tree/master/script) – Smart contract systems powering Zeur (Mechanism, Borrow, Collateral, Vault, Managements, etc...).
-* [**Deployments**](https://github.com/zeur-org/zeur-core/tree/master/docs/Deployments) – Deployed Zeur contract address (Borrow, Collateral, Vault, Managements, etc...).
-* [**Interface**](https://github.com/zeur-org/zeur-core/tree/master/docs/Interfaces) – A single entry point to fetch market-level and user-level data in one call.
-* [**Roles**](https://github.com/zeur-org/zeur-core/tree/master/docs/Roles) – Roles and functions of each core contract, etc.
+- Supply crypto assets (ETH, LINK) as collateral
+- Borrow EUR-denominated stablecoins (EURC, EURI) against collateral
+- Overcollateralized lending with configurable loan-to-value (LTV) ratios
 
-Each section should include:
+### 🚀 **Automatic Staking Rewards**
 
-* Overview
-* Guides
-* Technical Reference
+- Deposited ETH automatically stakes across multiple LST protocols (Lido, RocketPool, EtherFi, Morpho)
+- Deposited LINK automatically stakes via StakeLink
+- Users earn staking rewards while their assets serve as collateral
 
-## Overview
+### 💱 **EUR-Denominated Borrowing**
 
-Each product overview should explain:
+- Borrow against EUR-pegged stablecoins
+- Diversification away from USD-denominated assets
+- Support for multiple EUR stablecoins
 
-* **High-level components:** Vault system, Euro-backed stablecoin borrowing (EURC), automation management (stop-loss / take-profit), and spot swap-repay modules.
-* **High-level functionality:** Zero-interest crypto-backed borrow and lend, real-time vault tracking, auto-repay with profit extraction, permissionless stop-loss.
-* **Source code location:** [Zeur GitHub Repository](https://github.com/zeur-org/zeur-core/tree/master/docs/Contracts)
-* **Artifacts:** Smart contracts (on Etherscan/Sepolia), SDK/JS package (planned), Oracle, Data feeds, Data streams and etc(on Chainlink), AI agent(on ElizaOS)
+### 🛡️ **Liquidation Protection**
 
-Example: `/contracts/02-core-concepts.md` – provides an intro to our main core engine.
+- Automatic liquidation system to maintain protocol solvency
+- Liquidation bonuses for liquidators
+- Health factor monitoring
 
-## Guides
+## Architecture Overview
 
-Guides should follow this structure:
+![image](https://github.com/user-attachments/assets/5b3de75e-ea54-4144-8a56-7665592d021f)
 
-### Principles
+## Core Components
 
-* A single reusable concept per guide (e.g., setting a stop-loss, initiating a loan)
-* Three parts:
-  1. **Introduction** – Explain the concept & purpose
-  2. **Step-by-step code walkthrough**
-  3. **Expected outcome** – E.g., verify your vault updated correctly
+### 1. **Pool Contract**
 
-### Example Guide Ideas:
+- Central hub for all lending operations
+- Handles supply, withdraw, borrow, repay, and liquidate functions
+- Manages collateral and debt configurations
+- Tracks user positions and health factors
 
-| Title                          | Description                                         |
-| ------------------------------ | --------------------------------------------------- |
-| Getting Your First Zeur Borrow | Borrow EURC against ETH collateral with 0% interest |
-| Setting a Stop-Loss            | Set automatic repayment if the price drops          |
-| Triggering a Take-Profit       | Lock in gains with auto-deleveraging                |
-| Spot Swap-Repay                | Instantly repay by swapping collateral to EURC      |
-| Deploying a Vault via SDK      | How to integrate vault creation in dApps            |
+### 2. **Tokenization System**
 
-All guides will reference live code examples from the Zeur example repo.
+- **ColTokens**: Represent collateral deposits (colETH, colLINK)
+- **DebtTokens**: Represent borrowed amounts (debtEUR)
+- **ColEUR**: ERC4626 vault for EUR stablecoin deposits
 
-## Technical Reference
+### 3. **Vault System**
 
-Each module or SDK should have its exported interfaces documented. This can be generated using:
+- **VaultETH**: Manages ETH deposits and LST staking strategies
+- **VaultLINK**: Manages LINK deposits and staking
+- **Staking Routers**: Interface with various LST protocols
 
-* `solidity-docgen` for smart contracts
-* `typedoc` for any TypeScript SDKs
+### 4. **Oracle Integration**
 
-Example:
+- Chainlink price feeds for accurate asset valuations
+- Real-time price updates for liquidation calculations
+- Multi-asset price support (ETH, LINK, EURC, etc.)
 
-* `/contracts/08-vault-integration.md` – Documented functions, structs, and events
-* `/sdk/zeur-js/reference` – Coming soon
+### 5. **Access Management**
 
-## How to Create Technical Reference
+- Role-based access control system
+- Protocol administration and governance
+- Secure upgrade mechanisms
 
-### Solidity Contracts
+## User Journey
 
-```bash
-npm install solidity-docgen
-npm install -D solc-0.8@npm:solc@0.8.21
-npx solidity-docgen --solc-module solc-0.8 -t ./templates
-```
+### For Suppliers (Lenders)
 
-### TypeScript SDK
+1. **Deposit Collateral**: Supply ETH/LINK to earn staking rewards
+2. **Automatic Staking**: Assets automatically stake across LST protocols
+3. **Earn Rewards**: Receive staking rewards while maintaining borrowing capacity
+4. **Withdraw**: Unstake and withdraw assets at any time (subject to utilization)
 
-```bash
-npm install --save-dev typedoc typedoc-plugin-markdown
-npx typedoc --out docs src/index.ts
-```
+### For Borrowers
 
-## Updating Search Indices with Algolia
+1. **Supply Collateral**: Deposit ETH/LINK as collateral
+2. **Borrow EUR**: Take loans against collateral up to LTV limits
+3. **Manage Position**: Monitor health factor and collateral ratio
+4. **Repay**: Repay loans to unlock collateral
 
-1. Create `.env` with `APPLICATION_ID` and `API_KEY`
-2. Update `config.json` with your:
-   * `start_url`: [https://zeur.gitbook.io/zeur](https://zeur.gitbook.io/zeur)
-   * `index_name`: `zeur-docs`
-3. Run:
+### For EUR Suppliers
 
-```bash
-docker run -it --env-file=.env -e "CONFIG=$(cat ./config.json | jq -r tostring)" algolia/docsearch-scraper
-```
+1. **Supply EUR**: Deposit EUR stablecoins to earn lending interest
+2. **Earn Interest**: Receive interest from borrowers
+3. **Withdraw**: Withdraw supplied EUR plus accrued interest
 
-## Installation
+## Risk Management
 
-```bash
-yarn install
-```
+### Collateral Management
 
-## Local Development
+- Dynamic LTV ratios based on asset volatility
+- Liquidation thresholds to protect lenders
+- Supply and borrow caps to limit exposure
 
-```bash
-yarn run start
-```
+### Liquidation System
 
-## Clear Cache
+- Automated liquidation when health factor < 1.0
+- Liquidation bonuses to incentivize liquidators
+- Partial liquidation limits (50% max per transaction)
 
-```bash
-yarn docusaurus clear
-```
+### Oracle Security
 
-## Build
+- Chainlink price feeds for reliable pricing
+- Price deviation monitoring
+- Circuit breakers for extreme market conditions
 
-```bash
-yarn build
-```
+## Benefits
 
-## Deployment
+### For Users
 
-Deployed automatically via Vercel on `main` branch merge.
+- **Capital Efficiency**: Earn staking rewards while borrowing
+- **EUR Exposure**: Access to EUR-denominated lending
+- **Diversification**: Spread risk across multiple LST protocols
+- **Flexibility**: Borrow against multiple collateral types
+
+### For the Ecosystem
+
+- **Liquidity**: Deep liquidity pools for EUR stablecoins
+- **Innovation**: Novel combination of lending + staking
+- **Accessibility**: Simplified DeFi experience
+- **Composability**: Integrates with existing DeFi protocols
+
+## Supported Assets
+
+### Collateral Assets
+
+- **ETH**: Native Ethereum with LST staking
+- **LINK**: Chainlink token with staking rewards
+
+### Debt Assets
+
+- **EURC**: Circle's EUR stablecoin
+- **EURI**: Additional EUR stablecoins (extensible)
+
+### Liquid Staking Protocols
+
+- **Lido**: stETH integration
+- **RocketPool**: rETH integration
+- **EtherFi**: eETH integration
+- **Morpho**: Morpho vault integration
+- **StakeLink**: LINK staking integration
+
+## Next Steps
+
+This overview provides a high-level understanding of ZEUR protocol. For detailed technical information, please refer to the specific concept documents:
+
+- [Core Concepts](./02-core-concepts.md)
+- [Tokenization System](./03-tokenization-system.md)
+- [Collateral Management](./04-collateral-management.md)
+- [Borrowing and Lending](./05-borrowing-lending.md)
+- [Liquidation Process](./06-liquidation-process.md)
+- [Oracle Integration](./07-oracle-integration.md)
+- [Vault and Staking](./08-vault-staking.md)
+- [Access Management](./09-access-management.md)
+- [Security Features](./10-security-features.md)
